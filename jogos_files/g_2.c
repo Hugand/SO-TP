@@ -11,6 +11,21 @@
 #define MAX_WORD_TAM 20
 #define WORD_DICT_SIZE 6
 
+void showWelcomeMessage() {
+    printf("#########################################################################\n");
+    printf("                      Bem vindo ao scrambled words!!                     \n");
+    printf("             -----------------------------------------------             \n");
+    printf("  Neste jogo serão apresentadas varias palavras, uma de cada vez, cujas  \n");
+    printf("  letras estao baralhadas.  O teu objetivo e descobrir a palavra certa.  \n");
+    printf("  e  ganhar  o maior numero de pontos possivel. Sempre que acertes numa  \n");
+    printf("  palavra, ganhas 1 ponto e uma nova e te apresentada.                   \n");
+    printf("                                                                         \n");
+    printf("  Quando decidires terminar o jogo, escreve 'sair'.                      \n");
+    printf("                                                                         \n");
+    printf("  Boa sorte jogador, e que a forca esteja contigo!                       \n");
+    printf("#########################################################################\n");
+}
+
 void scrambleWord(char word[MAX_WORD_TAM]) {
     int wordSize = strlen(word);
     int currentPos, randomNextPos;
@@ -24,7 +39,6 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
         word[currentPos] = word[randomNextPos];
         word[randomNextPos] = tmpChar;
     }
-    printf("-> %s\n", word);
 }
 
 int main() {
@@ -42,8 +56,7 @@ int main() {
 
     int score = 0;
 
-
-    printf("Welcome puta\n");
+    showWelcomeMessage();
 
     do {
         randomPos = intUniformRnd(0, WORD_DICT_SIZE - 1);
@@ -53,22 +66,22 @@ int main() {
         printf("\nNOVA PALAVRA!!!\n");
         printf("Que palavra é esta? -> %s\n", randomWord);
         isLoopingWordInput = TRUE;
+
         do {
             printf("#> ");
-            // scanf("%s", wordInput);
             gets(wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {
                 isLoopingWordInput = FALSE;
-                printf("A sair. Vá tchau!\n");
-                return 0;
+                printf("\nA tua pontuação foi %d. Ate a proxima!\n", score);
+                exit(score);
             } else if(strcmp(wordInput, wordDict[randomPos]) == TRUE) {
                 score++;
                 isLoopingWordInput = FALSE;
-                printf("Correct word!!!\n");
+                printf("PALAVRA CORRETA!!!\n");
                 printf("SCORE: %d\n", score);   
             } else {
-                printf("The word you entered is wrong! - %s\n", wordInput);
+                printf("Palavra incorreta...\n");
             }
 
         } while (isLoopingWordInput == TRUE);
