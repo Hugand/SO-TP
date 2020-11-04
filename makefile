@@ -1,6 +1,8 @@
 CC=gcc
 
+
 all:
+	# make set_env
 	make jogos
 	make client
 	make arbitro
@@ -21,3 +23,7 @@ utils.o: utils.c
 # TODO: ADD TEMP FILE CLEAN
 clean:
 	rm *.o
+
+# set_env:
+# 	export GAMEDIR=./jogos_files
+# 	export MAXPLAYER=5

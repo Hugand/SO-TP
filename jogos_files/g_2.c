@@ -38,6 +38,7 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
         tmpChar = word[currentPos];
         word[currentPos] = word[randomNextPos];
         word[randomNextPos] = tmpChar;
+        currentPos = intUniformRnd(0, wordSize - 1);
     }
 }
 
