@@ -1,6 +1,7 @@
 CC=gcc
 
 all:
+	make set_env
 	make jogos
 	make client
 	make arbitro
@@ -17,3 +18,6 @@ arbitro:
 # TODO: ADD TEMP FILE CLEAN
 clean:
 	rm *.o
+
+set_env:
+	bash ./set_env.sh
