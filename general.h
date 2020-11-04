@@ -28,6 +28,8 @@ typedef struct Cliente{
 } Cliente;
 
 typedef struct Arbitro{
+    int DURACAO_CAMPEONATO;
+    int TEMPO_ESPERA;
     char *GAMEDIR;
     int MAXPLAYERS;
     Jogo* jogos;                //Lista de Jogos
