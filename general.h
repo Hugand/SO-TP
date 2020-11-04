@@ -1,5 +1,8 @@
 #include <stdio.h>
 
+#ifndef GENERAL_H
+#define GENERAL_H
+
 #define TAM 50
 
 
@@ -38,6 +41,5 @@ typedef struct Arbitro{
     int nJogos;
 } Arbitro;
 
-
-
+#endif // GENERAL_
 
