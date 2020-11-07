@@ -1,16 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <unistd.h>  
+#include <unistd.h>
 #include "../general.h"
 
-int charToInt(char c){
-	int num = 0;
-
-	//Substract '0' from entered char to get
-	//corresponding digit
-	num = c - '0';
-	return num;
-}
 
 void getEnvironmentVariables(Arbitro *arbitro) {
     char *maxplayerBuff;
