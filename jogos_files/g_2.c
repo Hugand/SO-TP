@@ -77,7 +77,7 @@ int main() {
                 printf("\nA tua pontuação foi %d. Ate a proxima!\n", score);
                 exit(score);
             } else if(strcmp(wordInput, wordDict[randomPos]) == TRUE) {
-                score++;
+                score += 10;
                 isLoopingWordInput = FALSE;
                 printf("PALAVRA CORRETA!!!\n");
                 printf("SCORE: %d\n", score);   
