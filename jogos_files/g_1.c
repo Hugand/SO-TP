@@ -2,57 +2,71 @@
 #include <stdlib.h>
 #include <time.h>
 
-/*
 void initRandom(){
     srand(time(NULL));          //previne a repeticao de numeros entre runs
 }
 
-int sortNumber(){
-    int number, maior=100, menor=0;
+int sortNumber(int menor, int maior){
+    int number;
     number = rand()%(maior+(menor+1));          //Gerarmos numeros entre 0 e 100
     return number;
 }
 
+void showWelcomeMessage() {
+    printf("#########################################################################\n");
+    printf("                      Bem vindo ao Random Numbers!!                      \n");
+    printf("             -----------------------------------------------             \n");
+    printf("  Neste jogo sera apresentado um numero que sera gerado                  \n");
+    printf("  aleatoriamente entre 0 e 20.                                           \n");
+    printf("  O teu objetivo sera advinhares qual e esse numero,                     \n");
+    printf("  Sempre que acertares, ganhas 10 pontos e sera gerado outro numero.     \n");
+    printf("                                                                         \n");
+    printf("  Quando decidires terminar o jogo, escreve '-1'.                      \n");
+    printf("                                                                         \n");
+    printf("  Boa sorte jogador, e que a forca esteja contigo!                       \n");
+    printf("#########################################################################\n");
+}
 
 void RandomNumber(){
     int number, numPlayer;
     int pontuacao=0;
+    int isLooping = 1;
     initRandom();
-    
-    printf("Bem vindo ao Jogo: Numeros Aleatorios!\n");
-    printf("Sumario do jogo:\n \tVamos ter a nossa maquina a gerar um numero entre 0 e 100\n\t"
-            "e o teu objetivo e acertares nesse numero.\n\t"
-            "Quanto mais cedo acertares mais pontuacao teras!!!"
-            "");
-/*
-/*
-    
-    /*Gerar um numero*/
-/*
-    number = sortNumber();
-    
-    /*Hipoteses*/
-/*
+
+    showWelcomeMessage();
+
+    // Gerar um numero
+    number = sortNumber(0, 5);
+
+    // Hipoteses
     printf("\n\nJa foi sorteado aleatoreamente um numero entre 0 e 100!\nTente advinhar-lo.");
-    while(1){
+    while(isLooping == 1){
         printf("\nDigite um numero: ");
         scanf("%d", &numPlayer);
+        fflush(stdin);
 
         if(numPlayer > -1 && numPlayer < 101){
             if(numPlayer == number){
                 printf("\nPARABENS acertou o numero!\t +10 Pontos");
                 pontuacao += 10; 
-                number = sortNumber();
+                number = sortNumber(0, 5);
                 printf("\n\nFoi sorteado outro numero.\t Boa sorte!");
             }else{
                 printf("\nIncorreto!!");
             }
+        }else if(numPlayer == -1){
+            isLooping = 0;
         }else{
             printf("\nDigite um numero entre 0 e 100!");
             break;
         }
     }
-    
+
     printf("\n\nPontuacao: %d\n\n", pontuacao);
 }
-*/
+
+
+int main(int argc, char** argv) {
+    RandomNumber();
+    return (EXIT_SUCCESS);
+}
