@@ -1,10 +1,6 @@
 CC=gcc
 
-all:
-	make set_env
-	make jogos
-	make client
-	make arbitro
+all: client jogos arbitro
 
 jogos:
 	${CC} -c jogos_files/g_*.c
@@ -19,5 +15,3 @@ arbitro:
 clean:
 	rm *.o
 
-set_env:
-	bash ./set_env.sh
