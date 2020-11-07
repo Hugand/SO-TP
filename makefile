@@ -1,11 +1,6 @@
 CC=gcc
 
-
-all:
-	# make set_env
-	make jogos
-	make client
-	make arbitro
+all: client jogos arbitro
 
 jogos: utils.o
 	${CC} jogos_files/g_1.c -o g_1.o
@@ -24,6 +19,3 @@ utils.o: utils.c
 clean:
 	rm *.o
 
-# set_env:
-# 	export GAMEDIR=./jogos_files
-# 	export MAXPLAYER=5
