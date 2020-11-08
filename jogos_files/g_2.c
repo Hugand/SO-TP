@@ -18,7 +18,7 @@ void showWelcomeMessage() {
     printf("  Neste jogo serão apresentadas varias palavras, uma de cada vez, cujas  \n");
     printf("  letras estao baralhadas.  O teu objetivo e descobrir a palavra certa.  \n");
     printf("  e  ganhar  o maior numero de pontos possivel. Sempre que acertes numa  \n");
-    printf("  palavra, ganhas 1 ponto e uma nova e te apresentada.                   \n");
+    printf("  palavra, ganhas 10 pontos e uma nova e te apresentada.                   \n");
     printf("                                                                         \n");
     printf("  Quando decidires terminar o jogo, escreve 'sair'.                      \n");
     printf("                                                                         \n");
@@ -70,7 +70,7 @@ int main() {
 
         do {
             printf("#> ");
-            gets(wordInput);
+            scanf("%s", wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {
                 isLoopingWordInput = FALSE;
