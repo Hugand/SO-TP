@@ -70,7 +70,7 @@ int main() {
 
         do {
             printf("#> ");
-            scanf("%s", &wordInput);
+            scanf("%s", wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {
                 isLoopingWordInput = FALSE;
