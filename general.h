@@ -27,7 +27,7 @@ typedef struct Jogo{
 
 typedef struct Cliente{
     Jogador jogador;
-    Jogo jogo;
+    Jogo *jogo;
 } Cliente;
 
 typedef struct Arbitro{

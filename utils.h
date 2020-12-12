@@ -1,5 +1,8 @@
 #ifndef UTILS_H
 #define UTILS_H
+#define FIFO_SRV "pipe_tubo"
+#define FIFO_CLI "pipe_cli%s"
+
 
 #define TRUE 0
 #define FALSE 1
@@ -12,5 +15,11 @@ int intUniformRnd(int a, int b);
 
 // Devolve o valor 1 com probabilidade prob. Caso contrario, devolve 0
 int probEvento(float prob);
+
+typedef struct{
+    char nome[20];
+    char comando[20];
+} PEDIDO;
+
 
 #endif /* UTILS_H */
