@@ -29,7 +29,7 @@ typedef struct Jogo{
 typedef struct Cliente{
     Jogador jogador;
     Jogo *jogo;
-    // int pid;
+    pid_t pid;
 } Cliente;
 
 typedef struct Arbitro{
@@ -46,6 +46,7 @@ typedef struct Arbitro{
 typedef struct{
     char nome[20];
     char comando[20];
+    pid_t pid;
 } PEDIDO;
 
 typedef struct{
