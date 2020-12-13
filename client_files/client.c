@@ -33,6 +33,9 @@ void sigint_handler(int s) {
     exit(0);
 }
 
+/*
+    Process the response received from arbitro
+*/
 void processResponse(RESPONSE resp, char *fifo) {
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
@@ -55,6 +58,9 @@ void processResponse(RESPONSE resp, char *fifo) {
             printf("[ERROR/ARBITRO]: Ocorreu um erro\n");
 }
 
+/*
+    Get response from arbitro
+*/
 void getResponse(char *fifo) {
     RESPONSE resp;
     int fdr = open(fifo, O_RDONLY);
@@ -63,6 +69,9 @@ void getResponse(char *fifo) {
     processResponse(resp, fifo);
 }
 
+/*
+    Make connection request to arbitro and process it.
+*/
 void connect_to_arbitro(PEDIDO p, int *fd) {
     int n;
     
