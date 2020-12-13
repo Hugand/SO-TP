@@ -34,8 +34,6 @@ void sigint_handler(int s) {
 }
 
 void sigusr2_handler(int s) {
-	int fd, n;
-
 	printf("\n%s foi expulso do campeonato pelo administrador!\n", playerName);
 	sigint_handler(s);
 }
