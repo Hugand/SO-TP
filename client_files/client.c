@@ -33,14 +33,11 @@ void sigint_handler(int s) {
     exit(0);
 }
 
-void usr2(int s) {
-    printf("Quittin now bitch\n");
-    exit(0);
+void sigusr2_handler(int s) {
+	printf("\n%s foi expulso do campeonato pelo administrador!\n", playerName);
+	sigint_handler(s);
 }
 
-/*
-    Process the response received from arbitro
-*/
 void processResponse(RESPONSE resp, char *fifo) {
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
@@ -92,9 +89,10 @@ void main(){
     int fd, n, fdr;
     PEDIDO p;
     RESPONSE resp;
+    printf("\n\nPID <%d>\n\n", getpid());
 
     signal(SIGINT, sigint_handler); // Ignore ^C
-    signal(SIGUSR2, usr2);
+	  signal(SIGUSR2, sigusr2_handler);
 
     if(access(FIFO_SRV, F_OK) == -1) {
         fprintf(stderr, "[ERR] O servidor não está a correr\n");

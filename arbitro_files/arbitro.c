@@ -203,6 +203,17 @@ int main(int argc, char *argv[]){
         else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
             scanf("%s", adminCommand);
             printf("=> %s\n", adminCommand);
+			if(strcmp(adminCommand, "players") == TRUE){
+				printf("\nLista de Jogadores:\n");
+				for(int j=0; j<arbitro.nClientes; j++){
+					printf("\t-> %s\n", arbitro.clientes[j].jogador.nome);
+				}
+			}else if(strcmp(adminCommand, "games") == TRUE){
+				printf("\nLista de Jogos disponiveis:\n");
+				for(int j=0; j<arbitro.nJogos; j++){
+					printf("\t-> %s\n", arbitro.jogos[j].nome);
+				}
+			}
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
 
