@@ -1,6 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
+
+int pontuacao=0;
+
+void trataSinal(int sinal){
+	exit(pontuacao);
+}
+
 
 void initRandom(){
     srand(time(NULL));          //previne a repeticao de numeros entre runs
@@ -29,12 +39,14 @@ void showWelcomeMessage() {
 
 void RandomNumber(){
     int number, numPlayer;
-    int pontuacao=0;
     int isLooping = 1;
     initRandom();
 
     showWelcomeMessage();
 
+    printf("<%d> \n", getpid());
+    signal(SIGUSR1, trataSinal);	//Quando se receber um sinal
+					//SIGUSR1 ele executa o trataSinal
     // Gerar um numero
     number = sortNumber(0, 5);
 
@@ -48,7 +60,7 @@ void RandomNumber(){
         if(numPlayer > -1 && numPlayer < 101){
             if(numPlayer == number){
                 printf("\nPARABENS acertou o numero!\t +10 Pontos");
-                pontuacao += 10; 
+                pontuacao += 10;
                 number = sortNumber(0, 5);
                 printf("\n\nFoi sorteado outro numero.\t Boa sorte!");
             }else{
@@ -58,7 +70,7 @@ void RandomNumber(){
             isLooping = 0;
         }else{
             printf("\nDigite um numero entre 0 e 100!");
-            break;
+            //break;
         }
     }
 
