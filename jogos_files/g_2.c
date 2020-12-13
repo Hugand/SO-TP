@@ -2,6 +2,9 @@
     Scrambled words
 */
 
+#include <sys/types.h>
+#include <signal.h>
+#include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -9,7 +12,13 @@
 #include "../utils.h"
 
 #define MAX_WORD_TAM 20
-#define WORD_DICT_SIZE 6
+#define WORD_DICT_SIZE 21
+
+int pontuacao=0;
+
+void trataSinal(int sinal){
+	exit(pontuacao);
+}
 
 void showWelcomeMessage() {
     printf("#########################################################################\n");
@@ -47,7 +56,12 @@ int main() {
 
     char wordDict[WORD_DICT_SIZE][MAX_WORD_TAM] = {
         "carro", "animal", "tigre",
-        "suposto","lisboa", "coimbra"
+        "suposto","lisboa", "coimbra",
+	"natal", "inverno", "neve",
+	"computador", "festival", "porto",
+	"aveiro", "lapis", "peixe",
+	"vaca", "vassoura", "livro",
+	"caderno", "caneta", "sebenta"
     };
     int isLoopingWordInput = TRUE;
     int isLoopingNewWord = TRUE;
@@ -55,9 +69,12 @@ int main() {
     int randomPos;
     char randomWord[MAX_WORD_TAM];
 
-    int score = 0;
 
     showWelcomeMessage();
+
+    printf("<%d> \n", getpid());
+    signal(SIGUSR1, trataSinal);	//Quando se receber um sinal
+					//SIGUSR1 ele executa o trataSinal
 
     do {
         randomPos = intUniformRnd(0, WORD_DICT_SIZE - 1);
@@ -74,13 +91,13 @@ int main() {
 
             if(strcmp(wordInput, "sair") == TRUE) {
                 isLoopingWordInput = FALSE;
-                printf("\nA tua pontuação foi %d. Ate a proxima!\n", score);
-                exit(score);
+                printf("\nA tua pontuação foi %d. Ate a proxima!\n", pontuacao);
+                exit(pontuacao);
             } else if(strcmp(wordInput, wordDict[randomPos]) == TRUE) {
-                score += 10;
+                pontuacao += 10;
                 isLoopingWordInput = FALSE;
                 printf("PALAVRA CORRETA!!!\n");
-                printf("SCORE: %d\n", score);   
+                printf("SCORE: %d\n", pontuacao);   
             } else {
                 printf("Palavra incorreta...\n");
             }

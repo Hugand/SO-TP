@@ -1,6 +1,6 @@
 CC=gcc
 
-all: client jogos arbitro
+all: client jogos arbitro administrador
 
 
 jogos: utils.o
@@ -15,6 +15,10 @@ client:
 arbitro:
 	@${CC} arbitro_files/arbitro.c -o arbitro.o
 	@echo Ficheiros do arbitro Compilados!
+
+administrador:
+	@${CC} administrador_files/administrador.c -o administrador.o
+	@echo Ficheiros do administrador Compilados!
 
 utils.o: utils.c
 	@${CC} utils.c -c
