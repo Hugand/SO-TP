@@ -12,6 +12,8 @@
 #include "../general.h"
 
 
+#define MAX_PLAYER_ERR 2
+
 void getEnvironmentVariables(Arbitro *arbitro) {
     char *maxplayerBuff;
 
@@ -77,8 +79,8 @@ int validate_connection(Arbitro *arbitro) {
 
 int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     // Check if the MAXPLAYERS limit is
+    if(validate_connection(arbitro) == FALSE) return MAX_PLAYER_ERR;
     int newClientIndex;
-    if(validate_connection(arbitro) == FALSE) return FALSE;
     
     Cliente newCliente;
     Cliente* tmpClientes;
@@ -87,18 +89,44 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     newPlayer.pontuacao = 0;
     newCliente.jogador = newPlayer;
     newClientIndex = arbitro->nClientes;
-
     tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes+1)*sizeof(Cliente));
 
     if(tmpClientes == NULL) return FALSE;
 
-    free(arbitro->clientes);
     arbitro->clientes = tmpClientes;
     arbitro->clientes[newClientIndex] = newCliente;
-
     arbitro->nClientes++;
 
     return TRUE;
+}
+
+int remove_cliente(Arbitro *arbitro, PEDIDO *p) {
+    int i;
+    Cliente *tmpClientes;
+
+    // If it is not removing the last remaining client
+    if(arbitro->nClientes > 1)
+        for(i = 0; i < arbitro->nClientes; i++) {
+            if(strcmp(arbitro->clientes[i].jogador.nome, p->nome) == TRUE) {
+                arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];
+
+                tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes-1)*sizeof(Cliente));
+                if(tmpClientes == NULL) return FALSE;
+
+                arbitro->clientes = tmpClientes;
+                arbitro->nClientes--;
+
+                return TRUE;
+            }
+        }
+    else { // If there is only one client remaing to remove
+        free(arbitro->clientes);
+        arbitro->clientes = NULL;
+        arbitro->nClientes = 0;
+        return TRUE;
+    }
+
+    return FALSE;
 }
 
 void printClientes(Arbitro *arbitro) {
@@ -106,7 +134,7 @@ void printClientes(Arbitro *arbitro) {
     printf("CLIENTS %d==> ", arbitro->nClientes);
 
     for(int i = 0; i < arbitro->nClientes; i ++) {
-        printf("%s ", arbitro->clientes[0].jogador.nome);
+        printf("%d:%s ", i, arbitro->clientes[i].jogador.nome);
     }
 
     printf("\n");
@@ -159,10 +187,8 @@ int main(int argc, char *argv[]){
 
     fd = open(FIFO_SRV, O_RDWR);
     printf("FIFO aberto... '%s'\n", FIFO_SRV);
-
+    printClientes(&arbitro);
     do {
-        // printf("COMANDO: ");
-        // fflush(stdout);
         FD_ZERO(&fds);
         FD_SET(0, &fds);
         FD_SET(fd, &fds);
@@ -171,26 +197,34 @@ int main(int argc, char *argv[]){
         res = select(fd + 1, &fds, NULL, NULL, NULL);
 
         if(res == 0) printf("Nada pra ler\n");
-        else if(res > 0 && FD_ISSET(0, &fds)) {
-            scanf("%s", cmd);
-            printf("O administrado pediu o comando '%s'\n", cmd);
-        } else if(res > 0 && FD_ISSET(fd, &fds)) {
+        else if(res > 0 && FD_ISSET(fd, &fds)) {
             n = read(fd, &p, sizeof(PEDIDO));
 
             printf("Recebi %s %s\n", p.nome, p.comando);
 
             if(strcmp(p.comando, "_connect_") == TRUE) {
-                if(add_cliente(&arbitro, &p) == TRUE) {
-                    sendResponse(p, "_connection_accept_", "", fifo, n);
-                } else {
-                    sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
+                switch(add_cliente(&arbitro, &p)) {
+                    case TRUE:
+                        sendResponse(p, "_connection_accept_", "", fifo, n);
+                        break;
+                    case MAX_PLAYER_ERR:
+                        sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
+                        break;
+                    case FALSE:
+                    default:
+                        sendResponse(p, "_connection_failed_", "", fifo, n);
                 }
+
+                printClientes(&arbitro);
+            } else if(strcmp(p.comando, "_disconnect_") == TRUE) {
+                if(remove_cliente(&arbitro, &p) == FALSE)
+                    printf("[ERRO] Erro ao remover cliente\n");
+                else
+                    printf("[INFO] Cliente %s foi removido\n", p.nome);
                 printClientes(&arbitro);
             } else {
                 sendResponse(p, "mudei_bitch", "", fifo, n);
             }
-
-
         }
     } while(p.comando != "m");
 
