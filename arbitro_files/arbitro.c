@@ -188,6 +188,8 @@ int main(int argc, char *argv[]){
 				for(int j=0; j<arbitro.nJogos; j++){
 					printf("\t-> %s\n", arbitro.jogos[j].nome);
 				}
+			}else if(strcmp(adminCommand, "exit") == TRUE){
+				
 			}
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
