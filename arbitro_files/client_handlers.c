@@ -3,9 +3,13 @@
 #include <string.h>
 #include "client_handlers.h"
 
+/*
+    Add a new client to arbitro if the number of players don't exceed
+    the MAX_PLAYER number.
+*/
 int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     // Check if the MAXPLAYERS limit is
-    if(validate_connection(arbitro) == FALSE) return MAX_PLAYER_ERR;
+    if(validate_max_player_exceed(arbitro) == FALSE) return MAX_PLAYER_ERR;
     int newClientIndex;
 
     // Attributed game to be used only for demo of the #mygame command
@@ -31,14 +35,17 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     return TRUE;
 }
 
-int remove_cliente(Arbitro *arbitro, PEDIDO *p) {
+/*
+    Remove cliente from arbitro by their name
+*/
+int remove_cliente(Arbitro *arbitro, char *clienteName) {
     int i;
     Cliente *tmpClientes;
 
-    // If it is not removing the last remaining client
-    if(arbitro->nClientes > 1)
-        for(i = 0; i < arbitro->nClientes; i++) {
-            if(strcmp(arbitro->clientes[i].jogador.nome, p->nome) == TRUE) {
+    for(i = 0; i < arbitro->nClientes; i++) {
+        if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
+            // If it is not removing the last remaining client
+            if(arbitro->nClientes > 1) {
                 arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];
 
                 tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes-1)*sizeof(Cliente));
@@ -46,20 +53,22 @@ int remove_cliente(Arbitro *arbitro, PEDIDO *p) {
 
                 arbitro->clientes = tmpClientes;
                 arbitro->nClientes--;
-
-                return TRUE;
+            } else { // If there is only one client remaing to remove
+                free(arbitro->clientes);
+                arbitro->clientes = NULL;
+                arbitro->nClientes = 0;
             }
+
+            return TRUE;
         }
-    else { // If there is only one client remaing to remove
-        free(arbitro->clientes);
-        arbitro->clientes = NULL;
-        arbitro->nClientes = 0;
-        return TRUE;
     }
 
     return FALSE;
 }
 
+/*
+    Print a list of clients
+*/
 void printClientes(Arbitro *arbitro) {
     int i;
     printf("CLIENTS %d==> ", arbitro->nClientes);
@@ -71,11 +80,17 @@ void printClientes(Arbitro *arbitro) {
     printf("\n");
 }
 
-int validate_connection(Arbitro *arbitro) {
+/*
+    Validate if the number of players has exceeded the MAX_PLAYER count.
+*/
+int validate_max_player_exceed(Arbitro *arbitro) {
     if(arbitro->nClientes >= arbitro->MAXPLAYERS) return FALSE; // Cant connect
     else return TRUE; // Can connenct
 }
 
+/*
+    Return a pointer to the game being played by a given player.
+*/
 Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
     int i;
 

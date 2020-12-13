@@ -60,6 +60,9 @@ void processResponse(RESPONSE resp, char *fifo) {
             printf("[ERROR/ARBITRO]: Ocorreu um erro\n");
 }
 
+/*
+    Get response from arbitro
+*/
 void getResponse(char *fifo) {
     RESPONSE resp;
     int fdr = open(fifo, O_RDONLY);
@@ -68,12 +71,16 @@ void getResponse(char *fifo) {
     processResponse(resp, fifo);
 }
 
+/*
+    Make connection request to arbitro and process it.
+*/
 void connect_to_arbitro(PEDIDO p, int *fd) {
     int n;
     
     mkfifo(fifo, 0600);
     *fd = open(FIFO_SRV, O_WRONLY);
     strcpy(p.comando, "#_connect_");
+    p.pid = getpid();
     n = write(*fd, &p, sizeof(PEDIDO));
     getResponse(fifo); 
 }
@@ -85,7 +92,7 @@ void main(){
     printf("\n\nPID <%d>\n\n", getpid());
 
     signal(SIGINT, sigint_handler); // Ignore ^C
-	signal(SIGUSR2, sigusr2_handler);
+	  signal(SIGUSR2, sigusr2_handler);
 
     if(access(FIFO_SRV, F_OK) == -1) {
         fprintf(stderr, "[ERR] O servidor não está a correr\n");
@@ -109,6 +116,7 @@ void main(){
     while(1) {
         printf("Comando => ");
         scanf("%s", p.comando);
+        p.pid = getpid();
         
         n = write(fd, &p, sizeof(PEDIDO));
 
