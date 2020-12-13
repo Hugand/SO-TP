@@ -159,7 +159,8 @@ void commandMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
     Handle command for the arbitro internal usage
 */
 void handleCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
-    if(strcmp(p.comando, "#_connect_") == TRUE) { // When a client make a connection request
+    // Check for #_connect_ command and if client isnt already connected
+    if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { // When a client make a connection request
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE)
         commandQuit(arbitro, &p);
@@ -175,7 +176,6 @@ int main(int argc, char *argv[]){
     int fd, n, fdr, fdlixo, res, wordSize, existName=0;
     char fifo[40], adminCommand[40];
     fd_set fds;
-    struct timeval tempo;
 
     initArbitro(&arbitro, argc, argv);
     printf("ARBITRO\n");
@@ -196,8 +196,6 @@ int main(int argc, char *argv[]){
         FD_ZERO(&fds);
         FD_SET(0, &fds);
         FD_SET(fd, &fds);
-        tempo.tv_sec = 10;
-        tempo.tv_usec = 0;
         res = select(fd + 1, &fds, NULL, NULL, NULL);
 
         if(res == 0) printf("Nada pra ler\n");
@@ -233,7 +231,7 @@ int main(int argc, char *argv[]){
 				if(!existName){
 					printf("\nErro no comando! Digite um nome existente (knome)\n");
 				}
-			}else if(strcmp(adminCommand, "exit") == TRUE){
+			} else if(strcmp(adminCommand, "exit") == TRUE){
 				for(int i=arbitro.nClientes; i>=0; i--){
 					strcpy(ptmp.nome,arbitro.clientes[i].jogador.nome);
 					ptmp.pid = arbitro.clientes[i].pid;

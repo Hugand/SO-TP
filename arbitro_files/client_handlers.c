@@ -90,6 +90,20 @@ int validate_max_player_exceed(Arbitro *arbitro) {
 }
 
 /*
+    Validate if the client is already connected
+*/
+int validate_client_connected(Arbitro *arbitro, pid_t pid) {
+    int i;
+    for(i = 0; i < arbitro->nClientes; i++) {
+        // if(strcmp(arbitro->clientes[i].jogador.nome, nome) == TRUE) {
+        if(arbitro->clientes[i].pid == pid) {
+           return FALSE;
+        }
+    }
+    return TRUE;
+}
+
+/*
     Return a pointer to the game being played by a given player.
 */
 Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
