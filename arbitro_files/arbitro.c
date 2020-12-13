@@ -160,7 +160,8 @@ void commandMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
 */
 void handleCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
     // Check for #_connect_ command and if client isnt already connected
-    if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { // When a client make a connection request
+    // When a client make a connection request
+    if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { 
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE)
         commandQuit(arbitro, &p);
