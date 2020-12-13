@@ -18,35 +18,63 @@ void despertar(int sinal){
 	kill(childPid, SIGUSR1);
 }
 
-// Driver code
-int main(void)
-{
-    signal(SIGALRM, despertar);
-    pid_t pid = fork();
-	
-	
-	//Child Process
-	childPid = pid;
-    if ( pid == 0 )
-    {
-       /* The pathname of the file passed to execl()
-          is not defined   */
-	childPid = getpid();
-        execl("g_2.o", "g_2.o", NULL);
-    }
-    alarm(100);
-    int status;
+void getEnvironmentVariables(Arbitro *arbitro) {
+    char *maxplayerBuff;
 
-    waitpid(pid, &status, 0); 		//processo pai espera que o filho termine
-
-    if ( WIFEXITED(status) )
-    {
-        int exit_status = WEXITSTATUS(status);
-        printf("Exit status of the child was %d\n",
-                                     exit_status); 
+    if((arbitro->GAMEDIR = getenv("GAMEDIR")) == NULL) {
+        printf("GAMEDIR NULLL\n");
+    }else {
+        printf("%s\n", arbitro->GAMEDIR);
     }
-    return 0; 
+
+    if((maxplayerBuff = getenv("MAXPLAYER")) == NULL) {
+        printf("MAXPLAYERS NULLL\n");
+    } else {
+        arbitro->MAXPLAYERS = atoi(maxplayerBuff);
+        printf("%d\n", arbitro->MAXPLAYERS);
+    }
 }
+
+/*
+    ./arbitro.o -d xxx -t xxx
+    -d => Championship duration
+    -t => Waiting time
+*/
+void getArgs(Arbitro *arbitro, int argc, char *argv[]) {
+    int opt;
+    char *subopts, *value;
+
+    // Make them negative for later validation
+    arbitro->DURACAO_CAMPEONATO = -1;
+    arbitro->TEMPO_ESPERA = -1;
+
+    while((opt = getopt(argc, argv, "d:t:")) != -1) {  
+        switch(opt) {
+            case 'd':
+                printf("%s\n", optarg);
+                arbitro->DURACAO_CAMPEONATO = atoi(optarg);
+                break;
+            case 't':
+                printf("%s\n", optarg);
+                arbitro->TEMPO_ESPERA = atoi(optarg);
+                break;
+            default:
+                printf("Invalid argument: %s\n", opt);
+        }
+    }
+
+    // Values validation. If they're <= 0, then they're invalid and the program ends
+    if(!arbitro->DURACAO_CAMPEONATO || arbitro->DURACAO_CAMPEONATO <= 0) {
+        printf("[ERRO] - Duracao do campeonato em falta/invalida. Utilize o argumento '-d' para passar um valor válido\n");
+        exit(1);
+    }
+
+    if(!arbitro->TEMPO_ESPERA || arbitro->TEMPO_ESPERA <= 0) {
+        printf("[ERRO] - Tempo de espera em falta/invalida. Utilize o argumento '-t' para passar um valor válido\n");
+        exit(1);
+    }
+}
+
 
 void initArbitro(Arbitro *arbitro, int argc, char* argv[]) {
     getEnvironmentVariables(arbitro);
@@ -106,7 +134,6 @@ void handleCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
             default:
                 sendResponse(p, "_connection_failed_", "", fifo, n);
         }
-
         printClientes(arbitro);
     } else if(strcmp(p.comando, "#quit") == TRUE)
         commandQuit(arbitro, &p);
@@ -120,7 +147,7 @@ int main(int argc, char *argv[]){
     PEDIDO p;
     RESPONSE resp;
     int fd, n, fdr, fdlixo, res;
-    char fifo[40];
+    char fifo[40], adminCommand[40];
     fd_set fds;
     struct timeval tempo;
 
@@ -137,6 +164,9 @@ int main(int argc, char *argv[]){
     printClientes(&arbitro);
     
     do {
+        printf("[ADMIN]: ");
+        fflush(stdout);
+
         FD_ZERO(&fds);
         FD_SET(0, &fds);
         FD_SET(fd, &fds);
@@ -145,7 +175,10 @@ int main(int argc, char *argv[]){
         res = select(fd + 1, &fds, NULL, NULL, NULL);
 
         if(res == 0) printf("Nada pra ler\n");
-        else if(res > 0 && FD_ISSET(fd, &fds)) {
+        else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
+            scanf("%s", adminCommand);
+            printf("=> %s\n", adminCommand);
+        } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
 
             printf("Recebi %s %s\n", p.nome, p.comando);

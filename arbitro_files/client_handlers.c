@@ -15,6 +15,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     
     Cliente newCliente;
     Cliente* tmpClientes;
+
     strcpy(newCliente.jogador.nome, p->nome);
     newCliente.jogador.pontuacao = 0;
     newCliente.jogo = mockGame;
@@ -86,3 +87,4 @@ Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
 
     return NULL;
 }
+ 

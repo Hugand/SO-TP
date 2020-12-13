@@ -45,7 +45,7 @@ void processResponse(RESPONSE resp, char *fifo) {
     } else if(strcmp(resp.code, "_success_arbitro_") == TRUE)
         printf("[ARBITRO]: %s\n", resp.desc);
     else if(strcmp(resp.code, "_success_game_") == TRUE)
-        printf("[ARBITRO]: %s\n", resp.desc);
+        printf("[GAME]: %s\n", resp.desc);
     else if(strcmp(resp.code, "_error_") == TRUE)
         if(strcmp(resp.desc, "_no_game_assigned_") == TRUE)
             printf("[ERROR/ARBITRO]: Nao existe nenhum jogo associado a este cliente\n");
