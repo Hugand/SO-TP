@@ -8,6 +8,7 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 #include "../utils.h"
+#include "../general.h"
 #include <signal.h>
 
 // Global vars to be accessible to the sigint_handler()
@@ -18,10 +19,11 @@ void sigint_handler(int s) {
     int fd, n;
     PEDIDO p;
 
+    // Send disconnect message to arbitro
     if(access(fifo, F_OK) == 0) {
         fd = open(FIFO_SRV, O_WRONLY);
         strcpy(p.nome, playerName); 
-        strcpy(p.comando, "_disconnect_"); 
+        strcpy(p.comando, "#quit"); 
         n = write(fd, &p, sizeof(PEDIDO));
     }
 
@@ -31,7 +33,7 @@ void sigint_handler(int s) {
     exit(0);
 }
 
-void processRepsonse(RESPONSE resp, char *fifo) {
+void processResponse(RESPONSE resp, char *fifo) {
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
@@ -40,7 +42,17 @@ void processRepsonse(RESPONSE resp, char *fifo) {
 
         unlink(fifo);
         exit(0);
-    }
+    } else if(strcmp(resp.code, "_success_arbitro_") == TRUE)
+        printf("[ARBITRO]: %s\n", resp.desc);
+    else if(strcmp(resp.code, "_success_game_") == TRUE)
+        printf("[ARBITRO]: %s\n", resp.desc);
+    else if(strcmp(resp.code, "_error_") == TRUE)
+        if(strcmp(resp.desc, "_no_game_assigned_") == TRUE)
+            printf("[ERROR/ARBITRO]: Nao existe nenhum jogo associado a este cliente\n");
+        else if(strcmp(resp.desc, "_invalid_command_") == TRUE)
+            printf("[ERROR/ARBITRO]: Comando invalido\n");
+        else
+            printf("[ERROR/ARBITRO]: Ocorreu um erro\n");
 }
 
 void getResponse(char *fifo) {
@@ -48,19 +60,16 @@ void getResponse(char *fifo) {
     int fdr = open(fifo, O_RDONLY);
     int n = read(fdr, &resp, sizeof(RESPONSE));
     close(fdr);
-    printf("Recebido %s %s %s\n", resp.nome, resp.code, resp.desc);
-    processRepsonse(resp, fifo);
+    processResponse(resp, fifo);
 }
 
-void connect_to_arbitro() {
-    int fd, n;
-    PEDIDO p;
+void connect_to_arbitro(PEDIDO p, int *fd) {
+    int n;
     
     mkfifo(fifo, 0600);
-    fd = open(FIFO_SRV, O_WRONLY);
-    strcpy(p.nome, playerName);
-    strcpy(p.comando, "_connect_");
-    n = write(fd, &p, sizeof(PEDIDO));
+    *fd = open(FIFO_SRV, O_WRONLY);
+    strcpy(p.comando, "#_connect_");
+    n = write(*fd, &p, sizeof(PEDIDO));
     getResponse(fifo); 
 }
 
@@ -73,7 +82,7 @@ void main(){
 
     if(access(FIFO_SRV, F_OK) == -1) {
         fprintf(stderr, "[ERR] O servidor não está a correr\n");
-        exit(6);
+        exit(1);
     }
 
     while(1) {
@@ -87,19 +96,18 @@ void main(){
         } else break;
     }
 
-    connect_to_arbitro();
+    strcpy(p.nome, playerName);
+    connect_to_arbitro(p, &fd);
 
     while(1) {
         printf("Comando => ");
         scanf("%s", p.comando);
-
+        
         n = write(fd, &p, sizeof(PEDIDO));
 
-        printf("Enviado %s %s\n", p.nome, p.comando);
         getResponse(fifo);
     }
 
-    printf("Terminei %s\n", fifo);
     close(fd);
     unlink(fifo);
     exit(0);

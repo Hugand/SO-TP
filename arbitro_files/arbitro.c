@@ -10,9 +10,7 @@
 #include "../utils.h"
 
 #include "../general.h"
-
-
-#define MAX_PLAYER_ERR 2
+#include "client_handlers.h"
 
 void getEnvironmentVariables(Arbitro *arbitro) {
     char *maxplayerBuff;
@@ -72,74 +70,6 @@ void getArgs(Arbitro *arbitro, int argc, char *argv[]) {
     }
 }
 
-int validate_connection(Arbitro *arbitro) {
-    if(arbitro->nClientes >= arbitro->MAXPLAYERS) return FALSE; // Cant connect
-    else return TRUE; // Can connenct
-}
-
-int add_cliente(Arbitro *arbitro, PEDIDO *p) {
-    // Check if the MAXPLAYERS limit is
-    if(validate_connection(arbitro) == FALSE) return MAX_PLAYER_ERR;
-    int newClientIndex;
-    
-    Cliente newCliente;
-    Cliente* tmpClientes;
-    Jogador newPlayer;
-    strcpy(newPlayer.nome, p->nome);
-    newPlayer.pontuacao = 0;
-    newCliente.jogador = newPlayer;
-    newClientIndex = arbitro->nClientes;
-    tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes+1)*sizeof(Cliente));
-
-    if(tmpClientes == NULL) return FALSE;
-
-    arbitro->clientes = tmpClientes;
-    arbitro->clientes[newClientIndex] = newCliente;
-    arbitro->nClientes++;
-
-    return TRUE;
-}
-
-int remove_cliente(Arbitro *arbitro, PEDIDO *p) {
-    int i;
-    Cliente *tmpClientes;
-
-    // If it is not removing the last remaining client
-    if(arbitro->nClientes > 1)
-        for(i = 0; i < arbitro->nClientes; i++) {
-            if(strcmp(arbitro->clientes[i].jogador.nome, p->nome) == TRUE) {
-                arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];
-
-                tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes-1)*sizeof(Cliente));
-                if(tmpClientes == NULL) return FALSE;
-
-                arbitro->clientes = tmpClientes;
-                arbitro->nClientes--;
-
-                return TRUE;
-            }
-        }
-    else { // If there is only one client remaing to remove
-        free(arbitro->clientes);
-        arbitro->clientes = NULL;
-        arbitro->nClientes = 0;
-        return TRUE;
-    }
-
-    return FALSE;
-}
-
-void printClientes(Arbitro *arbitro) {
-    int i;
-    printf("CLIENTS %d==> ", arbitro->nClientes);
-
-    for(int i = 0; i < arbitro->nClientes; i ++) {
-        printf("%d:%s ", i, arbitro->clientes[i].jogador.nome);
-    }
-
-    printf("\n");
-}
-
 void initArbitro(Arbitro *arbitro, int argc, char* argv[]) {
     getEnvironmentVariables(arbitro);
     getArgs(arbitro, argc, argv);
@@ -155,7 +85,6 @@ void sendResponse(PEDIDO p, char *code, char* desc, char *fifo, int n) {
     RESPONSE resp;
     
     if(n == sizeof(PEDIDO)) {
-        // printf("RESPONSE [%s] => %s\n", resp.nome, resp.comando);
         sprintf(fifo, FIFO_CLI, p.nome);
         fdr = open(fifo, O_WRONLY);
         strcpy(resp.nome, p.nome);
@@ -163,17 +92,57 @@ void sendResponse(PEDIDO p, char *code, char* desc, char *fifo, int n) {
         strcpy(resp.desc, desc);
         n = write(fdr, &resp, sizeof(RESPONSE));
         close(fdr);
-        printf("Written %s %s %s\n", resp.nome, resp.code, resp.desc);
     }
 }
 
+// When a client quits/closes the program
+void commandQuit(Arbitro *arbitro, PEDIDO *p) {
+    if(remove_cliente(arbitro, p) == FALSE)
+        printf("[ERRO] Erro ao remover cliente\n");
+    else
+        printf("[INFO] Cliente %s foi removido\n", p->nome);
+    printClientes(arbitro);
+}
+
+// Send game info to client
+void commandMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
+    Jogo* clientGameInfo = getJogoByClienteName(arbitro, p->nome);
+    
+    if(clientGameInfo == NULL)
+        sendResponse(*p, "_error_", "_no_game_assigned_", fifo, n);
+    else
+        sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
+}
+
+void handleCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
+
+    if(strcmp(p.comando, "#_connect_") == TRUE) { // When a client make a connection request
+        switch(add_cliente(arbitro, &p)) {
+            case TRUE:
+                sendResponse(p, "_connection_accept_", "", fifo, n);
+                break;
+            case MAX_PLAYER_ERR:
+                sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
+                break;
+            case FALSE:
+            default:
+                sendResponse(p, "_connection_failed_", "", fifo, n);
+        }
+
+        printClientes(arbitro);
+    } else if(strcmp(p.comando, "#quit") == TRUE)
+        commandQuit(arbitro, &p);
+    else if(strcmp(p.comando, "#mygame") == TRUE)
+        commandMyGame(arbitro, &p, fifo, n);
+    else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
+}
 
 int main(int argc, char *argv[]){
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
     int fd, n, fdr, fdlixo, res;
-    char fifo[40], cmd[40], op[1];
+    char fifo[40];
     fd_set fds;
     struct timeval tempo;
 
@@ -188,6 +157,7 @@ int main(int argc, char *argv[]){
     fd = open(FIFO_SRV, O_RDWR);
     printf("FIFO aberto... '%s'\n", FIFO_SRV);
     printClientes(&arbitro);
+    
     do {
         FD_ZERO(&fds);
         FD_SET(0, &fds);
@@ -202,28 +172,11 @@ int main(int argc, char *argv[]){
 
             printf("Recebi %s %s\n", p.nome, p.comando);
 
-            if(strcmp(p.comando, "_connect_") == TRUE) {
-                switch(add_cliente(&arbitro, &p)) {
-                    case TRUE:
-                        sendResponse(p, "_connection_accept_", "", fifo, n);
-                        break;
-                    case MAX_PLAYER_ERR:
-                        sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
-                        break;
-                    case FALSE:
-                    default:
-                        sendResponse(p, "_connection_failed_", "", fifo, n);
-                }
-
-                printClientes(&arbitro);
-            } else if(strcmp(p.comando, "_disconnect_") == TRUE) {
-                if(remove_cliente(&arbitro, &p) == FALSE)
-                    printf("[ERRO] Erro ao remover cliente\n");
-                else
-                    printf("[INFO] Cliente %s foi removido\n", p.nome);
-                printClientes(&arbitro);
-            } else {
-                sendResponse(p, "mudei_bitch", "", fifo, n);
+            if(p.comando[0] == '#') // Command for arbitro
+                handleCommandsForArbitro(&arbitro, p, fifo, n);
+            else { // Command for game...
+                printf("To be processed by the game\n");
+                sendResponse(p, "_success_game_", "output do jogo...", fifo, n);
             }
         }
     } while(p.comando != "m");
