@@ -23,6 +23,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     strcpy(newCliente.jogador.nome, p->nome);
     newCliente.jogador.pontuacao = 0;
     newCliente.jogo = mockGame;
+    newCliente.pid = p->pid;
     newClientIndex = arbitro->nClientes;
 
     tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes+1)*sizeof(Cliente));
