@@ -5,6 +5,7 @@
 #include <sys/types.h> 
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
 #include "../utils.h"
@@ -169,9 +170,9 @@ void handleCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
 
 int main(int argc, char *argv[]){
     Arbitro arbitro;
-    PEDIDO p;
+    PEDIDO p,ptmp;
     RESPONSE resp;
-    int fd, n, fdr, fdlixo, res;
+    int fd, n, fdr, fdlixo, res, wordSize, existName=0;
     char fifo[40], adminCommand[40];
     fd_set fds;
     struct timeval tempo;
@@ -201,6 +202,8 @@ int main(int argc, char *argv[]){
 
         if(res == 0) printf("Nada pra ler\n");
         else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
+            char word[] = "";
+			existName=0;
             scanf("%s", adminCommand);
             printf("=> %s\n", adminCommand);
 			if(strcmp(adminCommand, "players") == TRUE){
@@ -213,8 +216,30 @@ int main(int argc, char *argv[]){
 				for(int j=0; j<arbitro.nJogos; j++){
 					printf("\t-> %s\n", arbitro.jogos[j].nome);
 				}
+			}else if(adminCommand[0] == 'k'){
+				wordSize = strlen(adminCommand);
+				for(int j=1; j<wordSize; j++){
+					strncat(word, &adminCommand[j],1);
+				}
+				for(int i=0; i<arbitro.nClientes; i++){
+					if(strcmp(arbitro.clientes[i].jogador.nome, word) == TRUE){
+						strcpy(ptmp.nome,arbitro.clientes[i].jogador.nome);
+						ptmp.pid = arbitro.clientes[i].pid;
+						commandQuit(&arbitro, &ptmp);
+						existName = 1;
+					}
+				}
+				//Caso o nome nao exista
+				if(!existName){
+					printf("\nErro no comando! Digite um nome existente (knome)\n");
+				}
 			}else if(strcmp(adminCommand, "exit") == TRUE){
-				
+				for(int i=arbitro.nClientes; i>=0; i--){
+					strcpy(ptmp.nome,arbitro.clientes[i].jogador.nome);
+					ptmp.pid = arbitro.clientes[i].pid;
+					commandQuit(&arbitro, &ptmp);
+				}
+				break;
 			}
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
@@ -226,7 +251,7 @@ int main(int argc, char *argv[]){
                 sendResponse(p, "_success_game_", "output do jogo...", fifo, n);
             }
         }
-    } while(p.comando != "m");
+    } while(1);
 
     close(fd);
     unlink(FIFO_SRV);
