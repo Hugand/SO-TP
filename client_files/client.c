@@ -33,6 +33,11 @@ void sigint_handler(int s) {
     exit(0);
 }
 
+void usr2(int s) {
+    printf("Quittin now bitch\n");
+    exit(0);
+}
+
 /*
     Process the response received from arbitro
 */
@@ -78,6 +83,7 @@ void connect_to_arbitro(PEDIDO p, int *fd) {
     mkfifo(fifo, 0600);
     *fd = open(FIFO_SRV, O_WRONLY);
     strcpy(p.comando, "#_connect_");
+    p.pid = getpid();
     n = write(*fd, &p, sizeof(PEDIDO));
     getResponse(fifo); 
 }
@@ -88,6 +94,7 @@ void main(){
     RESPONSE resp;
 
     signal(SIGINT, sigint_handler); // Ignore ^C
+    signal(SIGUSR2, usr2);
 
     if(access(FIFO_SRV, F_OK) == -1) {
         fprintf(stderr, "[ERR] O servidor não está a correr\n");
@@ -111,6 +118,7 @@ void main(){
     while(1) {
         printf("Comando => ");
         scanf("%s", p.comando);
+        p.pid = getpid();
         
         n = write(fd, &p, sizeof(PEDIDO));
 

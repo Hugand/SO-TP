@@ -132,10 +132,12 @@ void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
     Handle the #quit command
 */
 void commandQuit(Arbitro *arbitro, PEDIDO *p) {
-    if(remove_cliente(arbitro, p) == FALSE)
+    if(remove_cliente(arbitro, p->nome) == FALSE)
         printf("[ERRO] Erro ao remover cliente\n");
-    else
+    else {
         printf("[INFO] Cliente %s foi removido\n", p->nome);
+        kill(p->pid, SIGUSR2);
+    }
     printClientes(arbitro);
 }
 
@@ -149,6 +151,7 @@ void commandMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
         sendResponse(*p, "_error_", "_no_game_assigned_", fifo, n);
     else
         sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
+
 }
 
 /*

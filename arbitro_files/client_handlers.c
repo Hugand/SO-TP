@@ -38,12 +38,12 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
 /*
     Remove cliente from arbitro by their name
 */
-int remove_cliente(Arbitro *arbitro, PEDIDO *p) {
+int remove_cliente(Arbitro *arbitro, char *clienteName) {
     int i;
     Cliente *tmpClientes;
 
     for(i = 0; i < arbitro->nClientes; i++) {
-        if(strcmp(arbitro->clientes[i].jogador.nome, p->nome) == TRUE) {
+        if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
             // If it is not removing the last remaining client
             if(arbitro->nClientes > 1) {
                 arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];

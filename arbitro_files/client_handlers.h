@@ -8,7 +8,7 @@
 #define MAX_PLAYER_ERR 2
 
 int add_cliente(Arbitro *arbitro, PEDIDO *p);
-int remove_cliente(Arbitro *arbitro, PEDIDO *p);
+int remove_cliente(Arbitro *arbitro, char *clienteName);
 void printClientes(Arbitro *arbitro);
 int validate_max_player_exceed(Arbitro *arbitro);
 Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName);
