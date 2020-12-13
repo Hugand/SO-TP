@@ -122,17 +122,20 @@ void initArbitro(Arbitro *arbitro, int argc, char* argv[]) {
     arbitro->jogos = malloc(0);
 }
 
-void sendResponse(PEDIDO resp, char *msg, char *fifo, int n) {
+void sendResponse(PEDIDO p, char *code, char* desc, char *fifo, int n) {
     int fdr;
+    RESPONSE resp;
     
     if(n == sizeof(PEDIDO)) {
-        printf("RESPONSE [%s] => %s\n", resp.nome, resp.comando);
-        sprintf(fifo, FIFO_CLI, resp.nome);
+        // printf("RESPONSE [%s] => %s\n", resp.nome, resp.comando);
+        sprintf(fifo, FIFO_CLI, p.nome);
         fdr = open(fifo, O_WRONLY);
-        strcpy(resp.comando, msg);
-        n = write(fdr, &resp, sizeof(PEDIDO));
+        strcpy(resp.nome, p.nome);
+        strcpy(resp.code, code);
+        strcpy(resp.desc, desc);
+        n = write(fdr, &resp, sizeof(RESPONSE));
         close(fdr);
-        printf("Written %s %s\n", resp.nome, resp.comando);
+        printf("Written %s %s %s\n", resp.nome, resp.code, resp.desc);
     }
 }
 
@@ -140,6 +143,7 @@ void sendResponse(PEDIDO resp, char *msg, char *fifo, int n) {
 int main(int argc, char *argv[]){
     Arbitro arbitro;
     PEDIDO p;
+    RESPONSE resp;
     int fd, n, fdr, fdlixo, res;
     char fifo[40], cmd[40], op[1];
     fd_set fds;
@@ -177,13 +181,13 @@ int main(int argc, char *argv[]){
 
             if(strcmp(p.comando, "_connect_") == TRUE) {
                 if(add_cliente(&arbitro, &p) == TRUE) {
-                    sendResponse(p, "_connection_accept_", fifo, n);
+                    sendResponse(p, "_connection_accept_", "", fifo, n);
                 } else {
-                    sendResponse(p, "_connection_failed_", fifo, n);
+                    sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
                 }
                 printClientes(&arbitro);
             } else {
-                sendResponse(p, "mudei_bitch", fifo, n);
+                sendResponse(p, "mudei_bitch", "", fifo, n);
             }
 
 
@@ -193,6 +197,4 @@ int main(int argc, char *argv[]){
     close(fd);
     unlink(FIFO_SRV);
     exit(0);
-
-    // return 0;
 }
