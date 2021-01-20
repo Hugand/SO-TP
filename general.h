@@ -1,5 +1,5 @@
 #include <stdio.h>
-
+#include <sys/types.h>
 #ifndef GENERAL_H
 #define GENERAL_H
 

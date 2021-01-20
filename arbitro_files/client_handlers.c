@@ -1,5 +1,5 @@
 #include <stdlib.h>
-
+#include <signal.h>
 #include <string.h>
 #include "client_handlers.h"
 
@@ -118,3 +118,28 @@ Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
     return NULL;
 }
  
+/*
+    Handle the #quit command
+*/
+void commandClientQuit(Arbitro *arbitro, PEDIDO *p) {
+    if(remove_cliente(arbitro, p->nome) == FALSE)
+        printf("[ERRO] Erro ao remover cliente\n");
+    else {
+        printf("[INFO] Cliente %s foi removido\n", p->nome);
+        kill(p->pid, SIGUSR2);
+    }
+    printClientes(arbitro);
+}
+
+/*
+    Handle the #mygame command
+*/
+void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
+    Jogo* clientGameInfo = getJogoByClienteName(arbitro, p->nome);
+    
+    if(clientGameInfo == NULL)
+        sendResponse(*p, "_error_", "_no_game_assigned_", fifo, n);
+    else
+        sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
+
+}
