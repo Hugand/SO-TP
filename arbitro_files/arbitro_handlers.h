@@ -12,7 +12,7 @@ void commandArbitroPlayers(Arbitro *arbitro);
 void commandArbitroGames(Arbitro *arbitro);
 void commandArbitroK(Arbitro *arbitro, char* adminCommand);
 void commandArbitroExit(Arbitro *arbitro);
-void commandArbitroS(Arbitro *arbitro, char* adminCommand);
+void commandArbitroS(Arbitro *arbitro, char* adminCommand, PEDIDO *p);
 
 
 #endif

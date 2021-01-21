@@ -144,3 +144,11 @@ void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
         sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
 
 }
+
+Cliente* getClienteByName(Arbitro* arbitro, char *name) {
+    int i;
+
+    for(i = 0; i < arbitro->nClientes; i++)
+        if(strcmp(arbitro->clientes[i].jogador.nome, name) == TRUE)
+            return &arbitro->clientes[i];
+}
