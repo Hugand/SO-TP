@@ -129,7 +129,6 @@ void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int 
 }
 
 int handleArbitroCommands(Arbitro *arbitro, PEDIDO p, char *fifo) {
-    char word[] = "";
     char adminCommand[40];
     scanf("%s", adminCommand);
     printf("=> %s\n", adminCommand);
@@ -138,9 +137,9 @@ int handleArbitroCommands(Arbitro *arbitro, PEDIDO p, char *fifo) {
     }else if(strcmp(adminCommand, "games") == TRUE){
         commandArbitroGames(arbitro);
     }else if(adminCommand[0] == 'k'){
-        commandArbitroK(arbitro, adminCommand, word);
+        commandArbitroK(arbitro, adminCommand);
     }else if(adminCommand[0] == 's'){
-        commandArbitroS(arbitro, adminCommand, word);
+        commandArbitroS(arbitro, adminCommand);
         sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(arbitro);
@@ -184,8 +183,6 @@ int main(int argc, char *argv[]){
             if(handleArbitroCommands(&arbitro, p, fifo) == 1) break;
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
-
-            printf("--> %s\n", p.comando);
 
             if(p.comando[0] == '#') // Command for arbitro
                 handleClientCommandsForArbitro(&arbitro, p, fifo, n);
