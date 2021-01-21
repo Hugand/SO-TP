@@ -140,8 +140,11 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
     }else if(adminCommand[0] == 'k'){
         commandArbitroK(arbitro, adminCommand);
     }else if(adminCommand[0] == 's'){
-        commandArbitroS(arbitro, adminCommand, &p);
-        sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", fifo, sizeof(p));
+        commandArbitroConSuspensa(arbitro, adminCommand, &p, TRUE);
+        sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
+    }else if(adminCommand[0] == 'r'){
+        commandArbitroConSuspensa(arbitro, adminCommand, &p, FALSE);
+        sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(arbitro);
         return 1;

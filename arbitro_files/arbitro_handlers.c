@@ -51,7 +51,7 @@ void commandArbitroExit(Arbitro *arbitro) {
     }
 }
 
-void commandArbitroS(Arbitro *arbitro, char* adminCommand, PEDIDO *p) {
+void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, int isConSuspended) {
     PEDIDO ptmp;
     int wordSize = strlen(adminCommand);
     char *clientName = malloc(sizeof(char) * (wordSize-1));
@@ -62,11 +62,14 @@ void commandArbitroS(Arbitro *arbitro, char* adminCommand, PEDIDO *p) {
 
     for(int i=0; i<arbitro->nClientes; i++){
         if(strcmp(arbitro->clientes[i].jogador.nome, clientName) == TRUE){
-            arbitro->clientes[i].isConnectionSuspended = TRUE;
+            arbitro->clientes[i].isConnectionSuspended = isConSuspended;
             doesNameExist = 1;
             p->pid = arbitro->clientes[i].pid;
             strcpy(p->nome, arbitro->clientes[i].jogador.nome);
-            printf("Comunicacao suspensa para %s\n", arbitro->clientes[i].jogador.nome);
+            if(isConSuspended == TRUE)
+                printf("Comunicacao suspensa para %s\n", arbitro->clientes[i].jogador.nome);
+            else
+                printf("Comunicacao retomana para %s\n", arbitro->clientes[i].jogador.nome);
             break;
         }
     }
