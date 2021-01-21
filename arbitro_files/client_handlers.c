@@ -24,6 +24,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     newCliente.jogador.pontuacao = 0;
     newCliente.jogo = mockGame;
     newCliente.pid = p->pid;
+    newCliente.isConnectionSuspended = FALSE;
     newClientIndex = arbitro->nClientes;
 
     tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes+1)*sizeof(Cliente));

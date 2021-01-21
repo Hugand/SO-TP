@@ -28,6 +28,7 @@ void commandArbitroK(Arbitro *arbitro, char* adminCommand, char* word) {
             ptmp.pid = arbitro->clientes[i].pid;
             commandClientQuit(arbitro, &ptmp);
             doesNameExist = 1;
+            break;
         }
     }
     //Caso o nome nao exista
@@ -42,5 +43,25 @@ void commandArbitroExit(Arbitro *arbitro) {
         strcpy(ptmp.nome,arbitro->clientes[i].jogador.nome);
         ptmp.pid = arbitro->clientes[i].pid;
         commandClientQuit(arbitro, &ptmp);
+    }
+}
+
+void commandArbitroS(Arbitro *arbitro, char* adminCommand, char* word) {
+    PEDIDO ptmp;
+    int wordSize = strlen(adminCommand);
+    int doesNameExist = 0;
+    for(int j=1; j<wordSize; j++){
+        strncat(word, &adminCommand[j],1);
+    }
+    for(int i=0; i<arbitro->nClientes; i++){
+        if(strcmp(arbitro->clientes[i].jogador.nome, word) == TRUE){
+            arbitro->clientes[i].isConnectionSuspended = TRUE;
+            doesNameExist = 1;
+            break;
+        }
+    }
+    //Caso o nome nao exista
+    if(!doesNameExist){
+        printf("\nErro no comando! Digite um nome existente (snome)\n");
     }
 }

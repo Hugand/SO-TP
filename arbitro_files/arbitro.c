@@ -118,6 +118,7 @@ void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
 void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
     // Check for #_connect_ command and if client isnt already connected
     // When a client make a connection request
+    // sendResponse(p, "_test_command_", "", fifo, sizeof(p));
     if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { 
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE)
@@ -127,7 +128,7 @@ void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int 
     else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
 }
 
-int handleArbitroCommands(Arbitro *arbitro, PEDIDO p) {
+int handleArbitroCommands(Arbitro *arbitro, PEDIDO p, char *fifo) {
     char word[] = "";
     char adminCommand[40];
     scanf("%s", adminCommand);
@@ -138,6 +139,9 @@ int handleArbitroCommands(Arbitro *arbitro, PEDIDO p) {
         commandArbitroGames(arbitro);
     }else if(adminCommand[0] == 'k'){
         commandArbitroK(arbitro, adminCommand, word);
+    }else if(adminCommand[0] == 's'){
+        commandArbitroS(arbitro, adminCommand, word);
+        sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(arbitro);
         return 1;
@@ -150,7 +154,7 @@ int main(int argc, char *argv[]){
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
-    int fd, n, fdr, fdlixo, res;
+    int fd, n, res;
     char fifo[40];
     fd_set fds;
 
@@ -177,9 +181,11 @@ int main(int argc, char *argv[]){
 
         if(res == 0) printf("Nada pra ler\n");
         else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
-            if(handleArbitroCommands(&arbitro, p) == 1) break;
+            if(handleArbitroCommands(&arbitro, p, fifo) == 1) break;
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
             n = read(fd, &p, sizeof(PEDIDO));
+
+            printf("--> %s\n", p.comando);
 
             if(p.comando[0] == '#') // Command for arbitro
                 handleClientCommandsForArbitro(&arbitro, p, fifo, n);
