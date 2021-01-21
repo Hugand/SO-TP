@@ -15,6 +15,7 @@ void printClientes(Arbitro *arbitro);
 int validate_max_player_exceed(Arbitro *arbitro);
 int validate_client_connected(Arbitro *arbitro, pid_t pid);
 Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName);
+Cliente* getClienteByName(Arbitro *arbitro, char *name);
 
 
 void commandClientQuit(Arbitro *arbitro, PEDIDO *p);

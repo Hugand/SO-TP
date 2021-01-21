@@ -8,11 +8,11 @@ jogos: utils.o
 	@echo Ficheiros dos jogos Compilados!
 
 client:
-	@${CC} client_files/client.c -o client.o
+	@${CC} client_files/client.c -o client.o -lpthread
 	@echo Ficheiros dos Clientes Compilados!
 
 arbitro:
-	@${CC} arbitro_files/*.c -o arbitro.o
+	@${CC} arbitro_files/*.c -o arbitro.o -lpthread
 	@echo Ficheiros do arbitro Compilados!
 
 utils.o: utils.c

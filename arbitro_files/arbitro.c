@@ -118,6 +118,7 @@ void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
 void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
     // Check for #_connect_ command and if client isnt already connected
     // When a client make a connection request
+    // sendResponse(p, "_test_command_", "", fifo, sizeof(p));
     if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { 
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE)
@@ -127,8 +128,8 @@ void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int 
     else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
 }
 
-int handleArbitroCommands(Arbitro *arbitro, PEDIDO p) {
-    char word[] = "";
+int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
+    PEDIDO p;
     char adminCommand[40];
     scanf("%s", adminCommand);
     printf("=> %s\n", adminCommand);
@@ -137,7 +138,13 @@ int handleArbitroCommands(Arbitro *arbitro, PEDIDO p) {
     }else if(strcmp(adminCommand, "games") == TRUE){
         commandArbitroGames(arbitro);
     }else if(adminCommand[0] == 'k'){
-        commandArbitroK(arbitro, adminCommand, word);
+        commandArbitroK(arbitro, adminCommand);
+    }else if(adminCommand[0] == 's'){
+        commandArbitroConSuspensa(arbitro, adminCommand, &p, TRUE);
+        sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
+    }else if(adminCommand[0] == 'r'){
+        commandArbitroConSuspensa(arbitro, adminCommand, &p, FALSE);
+        sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(arbitro);
         return 1;
@@ -146,11 +153,32 @@ int handleArbitroCommands(Arbitro *arbitro, PEDIDO p) {
     return 0;
 }
 
+void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
+    PEDIDO p;
+    Cliente *client;
+    int n;
+    n = read(fd, &p, sizeof(PEDIDO));
+
+    if(p.comando[0] == '#') // Command for arbitro
+        handleClientCommandsForArbitro(arbitro, p, fifo, n);
+    else { // Command for game...
+        client = getClienteByName(arbitro, p.nome);
+
+        if(client->isConnectionSuspended == TRUE) {
+            printf("Comunicação de %s suspensa\n", client->jogador.nome);
+            sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", fifo, n);
+        } else {
+            printf("To be processed by the game\n");
+            sendResponse(p, "_success_game_", "output do jogo...", fifo, n);
+        }
+    }
+}
+
 int main(int argc, char *argv[]){
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
-    int fd, n, fdr, fdlixo, res;
+    int fd, n, res;
     char fifo[40];
     fd_set fds;
 
@@ -177,16 +205,9 @@ int main(int argc, char *argv[]){
 
         if(res == 0) printf("Nada pra ler\n");
         else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
-            if(handleArbitroCommands(&arbitro, p) == 1) break;
+            if(handleArbitroCommands(&arbitro, fifo) == 1) break;
         } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
-            n = read(fd, &p, sizeof(PEDIDO));
-
-            if(p.comando[0] == '#') // Command for arbitro
-                handleClientCommandsForArbitro(&arbitro, p, fifo, n);
-            else { // Command for game...
-                printf("To be processed by the game\n");
-                sendResponse(p, "_success_game_", "output do jogo...", fifo, n);
-            }
+            handleClientsMessages(&arbitro, fd, fifo);
         }
     } while(1);
 

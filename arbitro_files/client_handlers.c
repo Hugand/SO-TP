@@ -24,6 +24,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     newCliente.jogador.pontuacao = 0;
     newCliente.jogo = mockGame;
     newCliente.pid = p->pid;
+    newCliente.isConnectionSuspended = FALSE;
     newClientIndex = arbitro->nClientes;
 
     tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes+1)*sizeof(Cliente));
@@ -142,4 +143,12 @@ void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
     else
         sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
 
+}
+
+Cliente* getClienteByName(Arbitro* arbitro, char *name) {
+    int i;
+
+    for(i = 0; i < arbitro->nClientes; i++)
+        if(strcmp(arbitro->clientes[i].jogador.nome, name) == TRUE)
+            return &arbitro->clientes[i];
 }
