@@ -7,6 +7,7 @@
 #include <string.h>
 #include <stdlib.h>
 #include <fcntl.h>
+#include <pthread.h>
 #include "../utils.h"
 
 #include "../general.h"
@@ -15,6 +16,14 @@
 #include "request_functions.h"
 
 pid_t childPid;
+
+typedef struct THREAD_CLI_MSG {
+    Arbitro *arbitro;
+    int fd;
+    char fifo[40];
+    int stop;
+} THREAD_CLI_MSG;
+
 
 void despertar(int sinal){
 	kill(childPid, SIGUSR1);
@@ -132,7 +141,7 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
     PEDIDO p;
     char adminCommand[40];
     scanf("%s", adminCommand);
-    printf("=> %s\n", adminCommand);
+    // printf("=> %s\n", adminCommand);
     if(strcmp(adminCommand, "players") == TRUE){
         commandArbitroPlayers(arbitro);
     }else if(strcmp(adminCommand, "games") == TRUE){
@@ -153,7 +162,7 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
     return 0;
 }
 
-void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
+void *handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     PEDIDO p;
     Cliente *client;
     int n;
@@ -174,13 +183,29 @@ void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     }
 }
 
+
+void *runClientMessagesThread(void *arg) {
+    THREAD_CLI_MSG *tcm = (THREAD_CLI_MSG *)arg;
+    Arbitro *arbitro = tcm->arbitro;
+    char *fifo = tcm->fifo;
+    int fd = tcm->fd;
+
+
+    while(tcm->stop == 0) {
+        handleClientsMessages(arbitro, fd, fifo);
+        printf("\n[ADMIN]: ");
+    }
+}
+
 int main(int argc, char *argv[]){
+    pthread_t clientMessagesThread, arbitroCommandsThread;
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
     int fd, n, res;
     char fifo[40];
     fd_set fds;
+    THREAD_CLI_MSG thread_cli_msg;
 
     initArbitro(&arbitro, argc, argv);
     printf("ARBITRO\n");
@@ -193,23 +218,25 @@ int main(int argc, char *argv[]){
     fd = open(FIFO_SRV, O_RDWR);
     printf("FIFO aberto: '%s'\n", FIFO_SRV);
     printClientes(&arbitro);
-    
+
+    thread_cli_msg.arbitro = &arbitro;
+    thread_cli_msg.fd = fd;
+    thread_cli_msg.stop = 0;
+    strcpy(thread_cli_msg.fifo, fifo);
+
+    pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
+
     do {
         printf("\n[ADMIN]: ");
         fflush(stdout);
 
-        FD_ZERO(&fds);
-        FD_SET(0, &fds);
-        FD_SET(fd, &fds);
-        res = select(fd + 1, &fds, NULL, NULL, NULL);
-
-        if(res == 0) printf("Nada pra ler\n");
-        else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
-            if(handleArbitroCommands(&arbitro, fifo) == 1) break;
-        } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
-            handleClientsMessages(&arbitro, fd, fifo);
+        if(handleArbitroCommands(&arbitro, fifo) == 1) {
+            thread_cli_msg.stop = 1;
+            break;
         }
     } while(1);
+
+    pthread_join(clientMessagesThread, NULL);
 
     close(fd);
     unlink(FIFO_SRV);
