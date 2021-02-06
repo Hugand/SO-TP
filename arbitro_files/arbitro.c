@@ -327,6 +327,7 @@ void initJogo(){
 
 void* gameThread(void* arg){
     initJogo();
+}
 
 int main(int argc, char *argv[]){
     pthread_t clientMessagesThread, arbitroCommandsThread;
