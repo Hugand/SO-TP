@@ -31,6 +31,7 @@ typedef struct Cliente{
     Jogo *jogo;
     pid_t pid;
     int isConnectionSuspended;
+    char fifo[30];
 } Cliente;
 
 typedef struct Arbitro{

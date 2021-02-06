@@ -8,7 +8,6 @@ void sendResponse(PEDIDO p, char *code, char* desc, char *fifo, int n) {
     RESPONSE resp;
     
     if(n == sizeof(PEDIDO)) {
-        sprintf(fifo, FIFO_CLI, p.nome);
         fdr = open(fifo, O_WRONLY);
         strcpy(resp.nome, p.nome);
         strcpy(resp.code, code);

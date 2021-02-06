@@ -21,6 +21,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     Cliente* tmpClientes;
 
     strcpy(newCliente.jogador.nome, p->nome);
+    sprintf(newCliente.fifo, FIFO_CLI, newCliente.jogador.nome);
     newCliente.jogador.pontuacao = 0;
     newCliente.jogo = mockGame;
     newCliente.pid = p->pid;

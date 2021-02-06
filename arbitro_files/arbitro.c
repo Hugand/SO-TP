@@ -106,6 +106,7 @@ void initArbitro(Arbitro *arbitro, int argc, char* argv[]) {
     Handle connection request: #_connect_ command
 */
 void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
+    printf("5==> %s\n", fifo);
     switch(add_cliente(arbitro, &p)) {
         case TRUE:
             sendResponse(p, "_connection_accept_", "", fifo, n);
@@ -117,6 +118,7 @@ void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
         default:
             sendResponse(p, "_connection_failed_", "", fifo, n);
     }
+    printf("6==> %s\n", fifo);
     printClientes(arbitro);
 }
 
@@ -128,7 +130,9 @@ void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int 
     // Check for #_connect_ command and if client isnt already connected
     // When a client make a connection request
     // sendResponse(p, "_test_command_", "", fifo, sizeof(p));
+    printf("4==> %s\n", fifo);
     if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { 
+    printf("4.2==> %s\n", fifo);
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE)
         commandClientQuit(arbitro, &p);
@@ -167,6 +171,7 @@ void *handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     Cliente *client;
     int n;
     n = read(fd, &p, sizeof(PEDIDO));
+    printf("3==> %s\n", fifo);
 
     if(p.comando[0] == '#') // Command for arbitro
         handleClientCommandsForArbitro(arbitro, p, fifo, n);
@@ -190,7 +195,8 @@ void *runClientMessagesThread(void *arg) {
     char *fifo = tcm->fifo;
     int fd = tcm->fd;
 
-
+    printf("2==> %s\n", fifo);
+    
     while(tcm->stop == 0) {
         handleClientsMessages(arbitro, fd, fifo);
         printf("\n[ADMIN]: ");
@@ -330,7 +336,7 @@ void* gameThread(void* arg){
 }
 
 int main(int argc, char *argv[]){
-    pthread_t clientMessagesThread, arbitroCommandsThread;
+    pthread_t clientMessagesThread, arbitroCommandsThread, gameT;
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
@@ -356,7 +362,10 @@ int main(int argc, char *argv[]){
     thread_cli_msg.stop = 0;
     strcpy(thread_cli_msg.fifo, fifo);
 
+    printf("==> %s\n", fifo);
+
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
+    // pthread_create(&gameT, NULL, &gameThread, NULL);
 
     do {
         printf("\n[ADMIN]: ");
@@ -368,6 +377,7 @@ int main(int argc, char *argv[]){
     thread_cli_msg.stop = 1;
 
     pthread_join(clientMessagesThread, NULL);
+    // pthread_join(gameT, NULL);
 
     close(fd);
     unlink(FIFO_SRV);
