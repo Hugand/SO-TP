@@ -199,6 +199,7 @@ void *runClientMessagesThread(void *arg) {
     }
 }
 
+
 void initJogo(Cliente* cliente){
     int readPipe[2], writePipe[2];         //Guarda os file descriptors
     pid_t pid;      //id do nosso processo
@@ -235,52 +236,36 @@ void initJogo(Cliente* cliente){
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
         // dup2(0, writePipe[0]);         //Passar o (stdin -> 0) para o pipe 
 
-        execlp("./g_2.o", "./g_2.o", NULL);
+        execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
 
     }else{          //Processo Pai
         close(readPipe[1]);
         printf("\nProcesso Pai!!\n");
     
-        alarm(10);
-        char readBuffer[3000];
+        // alarm(10);
         char writeBuffer[20];
-        // while(1){
-        //     while(read(readPipe[0], readBuffer,1) > 0){
-        //         write(1,readBuffer,1);          //1 -> stdout 
-                
-        //     }
-        //     puts("Sai");
-        //     scanf("%s", writeBuffer);
-        //     puts(writeBuffer);
-        //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
-        // }   
         int n = 0;
         int a;
         char buffer;
+        char *readBuffer;
         do {
+            readBuffer = malloc(sizeof(char) * 3000);
             n = 0;
-            strcpy(readBuffer, "");
-            // FD_ZERO(&fds);
-            // // FD_SET(0, &fds);
-            // FD_SET(readPipe[0], &fds);
 
-            // res = select(readPipe[0] + 1, &fds, NULL, NULL, NULL);
-
-            // // // if(res == 0) printf("NADA\n");
-            // if(res > 0 && FD_ISSET(readPipe[0], &fds)) { // PRINT GAME STDOUT
-
-            // TODO: here
-                while(read(readPipe[0], &buffer, 1) > 0){
-                    printf("%d ", buffer);
-                    readBuffer[n] = buffer;
-                    n++;
-                }
-                
-
-                printf("\n\n%d \n", n);
-                // write(1,readBuffer,1);          //1 -> stdout 
-                strcpy(p.nome, cliente->jogador.nome);
-                sendResponse(p, "_game_output_", readBuffer, cliente->fifo, sizeof(PEDIDO));
+            while(1){
+                read(readPipe[0], &buffer, 1);
+                if(buffer == 36) break;
+                strcat(readBuffer, &buffer);
+                // printf("%d-%d ", buffer, a);
+                fflush(stdout);
+                n++;
+            }
+            
+            puts(readBuffer);
+            printf("\n\n%d \n", n);
+            // write(1,readBuffer,1);          //1 -> stdout 
+            strcpy(p.nome, cliente->jogador.nome);
+            sendResponse(p, "_game_output_", readBuffer, cliente->fifo, sizeof(PEDIDO));
                  
                 // MANDAR PRO PIPE DO CLIENTE....
             // } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
@@ -299,7 +284,7 @@ void initJogo(Cliente* cliente){
 
             }
 */
-
+            free(readBuffer);
         } while(1);
 
         close(readPipe[0]);
@@ -331,6 +316,7 @@ void* gameThread(void* arg){
 void sorteioJogos(Arbitro *arbitro) {
     for(int i = 0; i < arbitro->nClientes; i++) {
         strcpy(arbitro->clientes[i].jogo.nome, "g_2.o");
+        strcpy(arbitro->clientes[i].jogo.gameCommand, "");
 
         pthread_create(&arbitro->clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro->clientes[i]);
     }
@@ -387,10 +373,10 @@ int main(int argc, char *argv[]){
     // pthread_create(&gameT, NULL, &gameThread, NULL);
 
     do {
-        // printf("\n[ADMIN]: ");
-        // fflush(stdout);
+        printf("\n[ADMIN]: ");
+        fflush(stdout);
         
-        // if(handleArbitroCommands(&arbitro, fifo) == 1) break;
+        if(handleArbitroCommands(&arbitro, fifo) == 1) break;
     } while(1);
 
     thread_cli_msg.stop = 1;
