@@ -236,55 +236,40 @@ void initJogo(Cliente* cliente){
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
         // dup2(0, writePipe[0]);         //Passar o (stdin -> 0) para o pipe 
 
-        execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
+        execlp("./g_2.o", "./g_2.o", NULL);
 
     }else{          //Processo Pai
         close(readPipe[1]);
         printf("\nProcesso Pai!!\n");
     
-        // alarm(10);
+        alarm(10);
+        char readBuffer[3000];
         char writeBuffer[20];
+        
         int n = 0;
         int a;
         char buffer;
-        char *readBuffer;
         do {
-            readBuffer = malloc(sizeof(char) * 3000);
             n = 0;
-
-            while(1){
-                read(readPipe[0], &buffer, 1);
-                if(buffer == 36) break;
-                strcat(readBuffer, &buffer);
-                // printf("%d-%d ", buffer, a);
-                fflush(stdout);
+            strcpy(readBuffer, "");
+            while(read(readPipe[0], &buffer, 1) > 0 && buffer != 36){
+                // printf("%c", buffer);
+                // fflush(stdout);
+                readBuffer[n] = buffer;
                 n++;
             }
             
-            puts(readBuffer);
+
             printf("\n\n%d \n", n);
-            // write(1,readBuffer,1);          //1 -> stdout 
             strcpy(p.nome, cliente->jogador.nome);
             sendResponse(p, "_game_output_", readBuffer, cliente->fifo, sizeof(PEDIDO));
-                 
-                // MANDAR PRO PIPE DO CLIENTE....
             // } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
             //     scanf("%s", writeBuffer);
             //     puts(writeBuffer);
             //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
             // }
 
-/*
-            if (read(readPipe[0], readBuffer, 1) != 0)
-                write(cliente)
-            
-            if(strcmp(dt.comando, "") != TRUE) {
-                write(jogo)
-                strcpy(dt.comando, "");
 
-            }
-*/
-            free(readBuffer);
         } while(1);
 
         close(readPipe[0]);
@@ -303,20 +288,18 @@ void initJogo(Cliente* cliente){
         }
     }
 
-    
-    
     return;
 }
 
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
+    printf("====> %s\n\n", cliente->jogador.nome);
     initJogo(cliente);
 }
 
 void sorteioJogos(Arbitro *arbitro) {
     for(int i = 0; i < arbitro->nClientes; i++) {
         strcpy(arbitro->clientes[i].jogo.nome, "g_2.o");
-        strcpy(arbitro->clientes[i].jogo.gameCommand, "");
 
         pthread_create(&arbitro->clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro->clientes[i]);
     }
@@ -373,10 +356,10 @@ int main(int argc, char *argv[]){
     // pthread_create(&gameT, NULL, &gameThread, NULL);
 
     do {
-        printf("\n[ADMIN]: ");
-        fflush(stdout);
+        // printf("\n[ADMIN]: ");
+        // fflush(stdout);
         
-        if(handleArbitroCommands(&arbitro, fifo) == 1) break;
+        // if(handleArbitroCommands(&arbitro, fifo) == 1) break;
     } while(1);
 
     thread_cli_msg.stop = 1;
