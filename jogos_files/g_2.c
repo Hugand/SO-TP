@@ -52,7 +52,7 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
 
 int main() {
     initRandom();
-
+    setbuf(stdout, NULL);
     char wordDict[WORD_DICT_SIZE][MAX_WORD_TAM] = { 
         "carro", "animal", "tigre",
         "suposto","lisboa", "coimbra",
@@ -85,7 +85,7 @@ int main() {
         isLoopingWordInput = TRUE;
 
         do {
-            printf("#> ");
+            printf("$ ");
             scanf("%s", wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {

@@ -45,7 +45,7 @@ void sigusr_handler(int s) {
 }
 
 void processResponse(RESPONSE resp, char *fifo) {
-    printf("\n");
+    printf("\n", resp.code);
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
@@ -62,6 +62,8 @@ void processResponse(RESPONSE resp, char *fifo) {
         printf("[ARBITRO] Comunicacao jogador-jogo foi suspensa!\n");
     else if(strcmp(resp.code, "_con_retomada_") == TRUE)
         printf("[ARBITRO] Comunicacao jogador-jogo foi retomada!\n");
+    else if(strcmp(resp.code, "_game_output_") == TRUE)
+        printf(resp.desc);
     else if(strcmp(resp.code, "_error_") == TRUE)
         if(strcmp(resp.desc, "_no_game_assigned_") == TRUE)
             printf("[ERROR/ARBITRO]: Nao existe nenhum jogo associado a este cliente\n");

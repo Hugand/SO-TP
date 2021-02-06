@@ -14,8 +14,6 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
 
     // Attributed game to be used only for demo of the #mygame command
     // To be removed in meta 3
-    Jogo *mockGame = malloc(sizeof(Jogo));
-    strcpy(mockGame->nome, "Mock game!");
     
     Cliente newCliente;
     Cliente* tmpClientes;
@@ -23,7 +21,6 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     strcpy(newCliente.jogador.nome, p->nome);
     sprintf(newCliente.fifo, FIFO_CLI, newCliente.jogador.nome);
     newCliente.jogador.pontuacao = 0;
-    newCliente.jogo = mockGame;
     newCliente.pid = p->pid;
     newCliente.isConnectionSuspended = FALSE;
     newClientIndex = arbitro->nClientes;
@@ -113,7 +110,7 @@ Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
 
     for(i = 0; i < arbitro->nClientes; i++) {
         if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
-            return arbitro->clientes[i].jogo;
+            return &arbitro->clientes[i].jogo;
         }
     }
 

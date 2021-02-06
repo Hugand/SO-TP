@@ -12,7 +12,7 @@ void commandArbitroPlayers(Arbitro *arbitro) {
 void commandArbitroGames(Arbitro *arbitro) {
     printf("\nLista de Jogos disponiveis:\n");
     for(int j=0; j<arbitro->nJogos; j++){
-        printf("\t-> %s\n", arbitro->jogos[j].nome);
+        printf("\t-> %s\n", arbitro->jogos[j]);
     }
 }
 

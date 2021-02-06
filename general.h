@@ -24,11 +24,12 @@ typedef struct Jogador{
 
 typedef struct Jogo{
     char nome[TAM];
+    pthread_t gameThread;
 } Jogo;
 
 typedef struct Cliente{
     Jogador jogador;
-    Jogo *jogo;
+    Jogo jogo;
     pid_t pid;
     int isConnectionSuspended;
     char fifo[30];
@@ -39,7 +40,7 @@ typedef struct Arbitro{
     int TEMPO_ESPERA;
     char *GAMEDIR;
     int MAXPLAYERS;
-    Jogo* jogos;                //Lista de Jogos
+    char* jogos[TAM];                //Lista de Jogos
     Cliente* clientes;              //lista de Clientes
     int nClientes;
     int nJogos;
@@ -54,7 +55,7 @@ typedef struct{
 typedef struct{
     char nome[20];
     char code[20]; // Response code ex: _connection_failed_
-    char desc[100]; // Response description ex. "_max_players_"
+    char desc[3000]; // Response description ex. "_max_players_"
 } RESPONSE;
 
 
