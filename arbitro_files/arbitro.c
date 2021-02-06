@@ -171,7 +171,6 @@ void *handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     Cliente *client;
     int n;
     n = read(fd, &p, sizeof(PEDIDO));
-    printf("3==> %s\n", fifo);
 
     if(p.comando[0] == '#') // Command for arbitro
         handleClientCommandsForArbitro(arbitro, p, fifo, n);
@@ -266,15 +265,16 @@ void initJogo(){
             // res = select(readPipe[0] + 1, &fds, NULL, NULL, NULL);
 
             // // if(res == 0) printf("NADA\n");
-            // if(res > 0 && FD_ISSET(readPipe[0], &fds)) { // PRINT GAME STDOUT
-            //     read(readPipe[0], readBuffer, 1);
-            //     write(1,readBuffer,1);          //1 -> stdout 
-            //     // write(1,readBuffer,1);          //1 -> stdout 
-            // } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
-            //     scanf("%s", writeBuffer);
-            //     puts(writeBuffer);
-            //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
-            // }
+            if(res > 0 && FD_ISSET(readPipe[0], &fds)) { // PRINT GAME STDOUT
+                read(readPipe[0], readBuffer, 1);
+                //write(1,readBuffer,1);          //1 -> stdout 
+                
+                // MANDAR PRO PIPE DO CLIENTE....
+            } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
+                scanf("%s", writeBuffer);
+                puts(writeBuffer);
+                write(writePipe[1], writeBuffer, sizeof(writeBuffer));
+            }
 
 /*
             if (read(readPipe[0], readBuffer, 1) != 0)
