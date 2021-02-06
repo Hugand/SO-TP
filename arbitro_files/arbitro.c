@@ -229,12 +229,11 @@ int main(int argc, char *argv[]){
     do {
         printf("\n[ADMIN]: ");
         fflush(stdout);
-
-        if(handleArbitroCommands(&arbitro, fifo) == 1) {
-            thread_cli_msg.stop = 1;
-            break;
-        }
+        
+        if(handleArbitroCommands(&arbitro, fifo) == 1) break;
     } while(1);
+
+    thread_cli_msg.stop = 1;
 
     pthread_join(clientMessagesThread, NULL);
 
