@@ -197,6 +197,138 @@ void *runClientMessagesThread(void *arg) {
     }
 }
 
+void initJogo(){
+    int readPipe[2], writePipe[2];         //Guarda os file descriptors
+    pid_t pid;      //id do nosso processo
+    pthread_t thread;
+    fd_set fds;
+    int res;
+    
+
+    signal(SIGALRM, despertar);
+
+    if (pipe(readPipe)==-1) 
+    { 
+        fprintf(stderr, "Pipe Failed" ); 
+        return; 
+    } 
+    if (pipe(writePipe)==-1) 
+    { 
+        fprintf(stderr, "Pipe Failed" ); 
+        return; 
+    } 
+
+    pid = fork();
+    if(pid < 0){                //Erro no fork
+        fprintf(stderr, "Fork failed!");
+        return;
+    }
+    else if(pid == 0){           //Child process
+        childPid = getpid();
+
+        close(readPipe[0]);
+        close(writePipe[1]);
+        dup2(readPipe[1], 1);          //Passar o (1 -> stdout) para o pipe de escrita
+        // dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
+        dup2(0, writePipe[0]);         //Passar o (stdin -> 0) para o pipe 
+
+        execlp("./g_2.o", "./g_2.o", NULL);
+
+    }else{          //Processo Pai
+        close(readPipe[1]);
+        printf("\nProcesso Pai!!\n");
+    
+        alarm(10);
+        char readBuffer[1000];
+        char writeBuffer[20];
+        // while(1){
+        //     while(read(readPipe[0], readBuffer,1) > 0){
+        //         write(1,readBuffer,1);          //1 -> stdout 
+                
+        //     }
+        //     puts("Sai");
+        //     scanf("%s", writeBuffer);
+        //     puts(writeBuffer);
+        //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
+        // }   
+
+        do {
+            // FD_ZERO(&fds);
+            // FD_SET(0, &fds);
+            // FD_SET(readPipe[0], &fds);
+
+            // res = select(readPipe[0] + 1, &fds, NULL, NULL, NULL);
+
+            // // if(res == 0) printf("NADA\n");
+            // if(res > 0 && FD_ISSET(readPipe[0], &fds)) { // PRINT GAME STDOUT
+            //     read(readPipe[0], readBuffer, 1);
+            //     write(1,readBuffer,1);          //1 -> stdout 
+            //     // write(1,readBuffer,1);          //1 -> stdout 
+            // } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
+            //     scanf("%s", writeBuffer);
+            //     puts(writeBuffer);
+            //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
+            // }
+
+/*
+            if (read(readPipe[0], readBuffer, 1) != 0)
+                write(cliente)
+            
+            if(strcmp(dt.comando, "") != TRUE) {
+                write(jogo)
+                strcpy(dt.comando, "");
+
+            }
+*/
+
+        } while(1);
+
+
+    /* do {
+        printf("\n[ADMIN]: ");
+        fflush(stdout);
+
+        FD_ZERO(&fds);
+        FD_SET(0, &fds);
+        FD_SET(fd, &fds);
+        res = select(fd + 1, &fds, NULL, NULL, NULL);
+
+        if(res == 0) printf("Nada pra ler\n");
+        else if(res > 0 && FD_ISSET(0, &fds)) { // Admin
+            if(handleArbitroCommands(&arbitro, fifo) == 1) break;
+        } else if(res > 0 && FD_ISSET(fd, &fds)) { // Clients
+            handleClientsMessages(&arbitro, fd, fifo);
+        }
+    } while(1); */
+
+        puts("Frase: ");
+        printf("%s", readBuffer);
+
+        close(readPipe[0]);
+        //close(writePipe[0]);
+        
+        
+        int status;
+
+        waitpid(pid, &status, 0); 		//processo pai espera que o filho termine
+
+        if ( WIFEXITED(status) )
+        {
+            int exit_status = WEXITSTATUS(status);
+            printf("Exit status of the child was %d\n",
+                                        exit_status); 
+        }
+    }
+
+    
+    
+    return;
+}
+
+void* gameThread(void* arg){
+    initJogo();
+}
+
 int main(int argc, char *argv[]){
     pthread_t clientMessagesThread, arbitroCommandsThread;
     Arbitro arbitro;
