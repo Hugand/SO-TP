@@ -218,7 +218,7 @@ void* gameThread(void* arg){
 }
 
 void sorteioJogos() {
-    if(gameStarted == FALSE && arbitro.nClientes == 2) {
+    if(gameStarted == FALSE) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
         
