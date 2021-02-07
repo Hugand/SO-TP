@@ -22,6 +22,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     sprintf(newCliente.fifo, FIFO_CLI, newCliente.jogador.nome);
     newCliente.jogador.pontuacao = 0;
     newCliente.pid = p->pid;
+    strcpy(newCliente.jogo.gameCommand, "");
     newCliente.isConnectionSuspended = FALSE;
     newClientIndex = arbitro->nClientes;
 

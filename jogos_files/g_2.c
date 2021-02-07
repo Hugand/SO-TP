@@ -81,10 +81,10 @@ int main() {
         scrambleWord(randomWord);
 
         printf("\nNOVA PALAVRA!!!\n");
-        printf("Que palavra é esta? -> %s  --   %s\n", randomWord, wordDict[randomPos] );
         isLoopingWordInput = TRUE;
 
         do {
+            printf("Que palavra é esta? -> %s  --   %s\n", randomWord, wordDict[randomPos] );
             printf("$ ");
             scanf("%s", wordInput);
 
@@ -98,7 +98,7 @@ int main() {
                 printf("PALAVRA CORRETA!!!\n");
                 printf("SCORE: %d\n", pontuacao);   
             } else {
-                printf("Palavra incorreta...\n");
+                printf("\nPalavra incorreta...\n");
             }
 
         } while (isLoopingWordInput == TRUE);

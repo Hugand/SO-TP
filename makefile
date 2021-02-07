@@ -20,5 +20,5 @@ utils.o: utils.c
 
 clean:
 	@rm *.o
-	@rm pipe_*
+	@find . -type p -delete
 	@echo Ficheiros limpos! 

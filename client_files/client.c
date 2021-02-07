@@ -140,21 +140,20 @@ void main(){
     strcpy(p.nome, playerName);
     connect_to_arbitro(p, &fd);
 
-    printf("=> \n");
-
     int quit = 0;
 
     pthread_create(&readPipeThread, NULL, &readFromPipe, &quit);
-
 
     while(1) {
         printf("Comando => ");
         fflush(stdout);
         
         scanf("%s", p.comando);
+        fflush(stdin);
+        puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));
-
+        printf("%d %d\n\n", n, sizeof(PEDIDO));
         if(strcmp(p.comando, "sair") == TRUE)
             break;
     }
