@@ -60,6 +60,19 @@ typedef struct{
 } RESPONSE;
 
 
+typedef struct THREAD_CLI_MSG {
+    Arbitro *arbitro;
+    int fd;
+    char fifo[40];
+    int stop;
+} THREAD_CLI_MSG;
+
+
+typedef struct GAME_COMM_THRD_DATA {
+    int *pipe;
+    Cliente *cliente;
+} GAME_COMM_THRD_DATA;
+
 
 #endif // GENERAL_
 

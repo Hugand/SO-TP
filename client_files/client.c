@@ -45,10 +45,11 @@ void sigusr_handler(int s) {
 }
 
 void processResponse(RESPONSE resp, char *fifo) {
-    printf("\n", resp.code);
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
+        if(strcmp(resp.desc, "_game_started_") == TRUE)
+            printf("[ARBITRO] Coneccao recusada. O campeonato ja comecou.\n");
         else
             printf("[ERRO] Erro ao conectar ao arbitro!\n");
 
@@ -155,7 +156,6 @@ void main(){
         fflush(stdout);
         
         scanf("%s", p.comando);
-        fflush(stdin);
         puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));

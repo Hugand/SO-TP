@@ -53,7 +53,7 @@ void RandomNumber(){
     // Hipoteses
     printf("\n\nJa foi sorteado aleatoreamente um numero entre 0 e 100!\nTente advinhar-lo.");
     while(isLooping == 1){
-        printf("\nDigite um numero: ");
+        printf("\nDigite um numero:$ ");
         scanf("%d", &numPlayer);
         fflush(stdin);
 
