@@ -69,6 +69,8 @@ void processResponse(RESPONSE resp, char *fifo) {
         printf("[ARBITRO] Comunicacao jogador-jogo foi suspensa!\n");
     else if(strcmp(resp.code, "_con_retomada_") == TRUE)
         printf("[ARBITRO] Comunicacao jogador-jogo foi retomada!\n");
+    else if(strcmp(resp.code, "_announce_winner_") == TRUE)
+        printf(resp.desc);
     else if(strcmp(resp.code, "_game_output_") == TRUE)
         printf(resp.desc);
     else if(strcmp(resp.code, "_final_score_") == TRUE)
@@ -158,7 +160,6 @@ void main(){
         fflush(stdout);
         
         scanf("%s", p.comando);
-        // puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));
     }

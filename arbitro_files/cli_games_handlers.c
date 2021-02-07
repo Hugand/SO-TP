@@ -7,7 +7,7 @@ void *gameCommReadThread(void *arg) {
     char *readBuffer;
     PEDIDO p;
     int n = 0;
-    printf("RT JOGO CLIENTE %s pipes %d %d  %p\n", grt->cliente->fifo, grt->pipe[0], grt->pipe[1], grt->pipe);
+    printf("RT JOGO CLIENTE %s pipes %d %d  %d\n", grt->cliente->fifo, grt->pipe[0], grt->pipe[1], *grt->isThreadRunning);
 
     close(grt->pipe[1]);
     do {
@@ -21,6 +21,7 @@ void *gameCommReadThread(void *arg) {
         }
         
         if(strcmp(readBuffer, "") != TRUE) {
+            printf("========\n");
             strcpy(p.nome, grt->cliente->jogador.nome);
             sendResponse(p, "_game_output_", readBuffer, grt->cliente->fifo, sizeof(PEDIDO));
         }
@@ -36,6 +37,8 @@ void *gameCommReadThread(void *arg) {
 void *gameCommWriteThread(void *arg) {
     GAME_COMM_THRD_DATA *gwt = (GAME_COMM_THRD_DATA *) arg;
     char newLineChar = '\n';
+
+    printf("WRITING THREAD\n");
 
     close(gwt->pipe[0]);
     do {

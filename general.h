@@ -44,6 +44,7 @@ typedef struct Arbitro{
     int MAXPLAYERS;
     char* jogos[TAM];                //Lista de Jogos
     Cliente* clientes;              //lista de Clientes
+    Cliente* winner;
     int nClientes;
     int nJogos;
 } Arbitro;
@@ -62,7 +63,6 @@ typedef struct{
 
 
 typedef struct THREAD_CLI_MSG {
-    Arbitro *arbitro;
     int fd;
     char fifo[40];
     int stop;
