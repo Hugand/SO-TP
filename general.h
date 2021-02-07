@@ -62,7 +62,6 @@ typedef struct{
 
 
 typedef struct THREAD_CLI_MSG {
-    Arbitro *arbitro;
     int fd;
     char fifo[40];
     int stop;
