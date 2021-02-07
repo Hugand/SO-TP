@@ -79,12 +79,27 @@ void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, 
     free(clientName);
 }
 
+void displayFinalScores(Arbitro *arbitro) {
+    printf("\n\n###############################\n");
+    printf("        Pontuação final        \n");
+    printf("###############################\n");
+    for(int i = 0; i < arbitro->nClientes; i++)
+        printf(" [ %d ] - %s - %dpts\n", i+1, arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogador.pontuacao);
+    printf("###############################\n\n");
+
+}
+
 void stopGames(Arbitro *arbitro, int *gameStarted) {
     *gameStarted = FALSE;
-    int finalScore;
 
     for(int i = 0; i < arbitro->nClientes; i++) {
         printf("KILLING %s %d\n", arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogo.gamePID);
         kill(arbitro->clientes[i].jogo.gamePID, SIGUSR1);
     }
 }
+
+void commandEndGame(Arbitro *arbitro, int *gameStarted) {
+    stopGames(arbitro, gameStarted);
+    displayFinalScores(arbitro);
+}
+

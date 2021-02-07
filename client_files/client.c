@@ -71,6 +71,8 @@ void processResponse(RESPONSE resp, char *fifo) {
         printf("[ARBITRO] Comunicacao jogador-jogo foi retomada!\n");
     else if(strcmp(resp.code, "_game_output_") == TRUE)
         printf(resp.desc);
+    else if(strcmp(resp.code, "_final_score_") == TRUE)
+        printf("\nO campeonato chegou ao fim!\nPontuacao final: %s\n\n", resp.desc);
     else if(strcmp(resp.code, "_error_") == TRUE)
         if(strcmp(resp.desc, "_no_game_assigned_") == TRUE)
             printf("[ERROR/ARBITRO]: Nao existe nenhum jogo associado a este cliente\n");

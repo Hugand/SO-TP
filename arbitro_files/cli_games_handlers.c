@@ -15,21 +15,27 @@ void *gameCommReadThread(void *arg) {
         memset(readBuffer,0,strlen(readBuffer));
         
         n = 0;
-        while(read(grt->pipe[0], &buffer, 1) > 0 && buffer != '$'){
+        while(read(grt->pipe[0], &buffer, 1) > 0 && buffer != '$' && n < 3000){
             readBuffer[n] = buffer;
             n++;
         }
+        
+        if(strcmp(readBuffer, "") != TRUE) {
+            strcpy(p.nome, grt->cliente->jogador.nome);
+            sendResponse(p, "_game_output_", readBuffer, grt->cliente->fifo, sizeof(PEDIDO));
+        }
 
-        strcpy(p.nome, grt->cliente->jogador.nome);
-        sendResponse(p, "_game_output_", readBuffer, grt->cliente->fifo, sizeof(PEDIDO));
         free(readBuffer);
     } while(*grt->isThreadRunning == TRUE);
+
+    printf("QUITING READ THREAD %s\n", grt->cliente->jogador.nome);
+
+    close(grt->pipe[0]);
 }
 
 void *gameCommWriteThread(void *arg) {
     GAME_COMM_THRD_DATA *gwt = (GAME_COMM_THRD_DATA *) arg;
     char newLineChar = '\n';
-    printf("WT JOGO CLIENTE %s pipes -- %d\n", gwt->cliente->fifo, *gwt->isThreadRunning);
 
     close(gwt->pipe[0]);
     do {
@@ -40,6 +46,7 @@ void *gameCommWriteThread(void *arg) {
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
         }
     } while(*gwt->isThreadRunning == TRUE);
+    close(gwt->pipe[1]);
 }
 
 void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente, int *gameStarted) {
@@ -55,24 +62,19 @@ void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *c
     gameWriteThreadData.cliente = cliente;
     gameWriteThreadData.isThreadRunning = gameStarted;
 
-    printf("===tt=> %d\n", *gameStarted);
-    printf("BEFORE T JOGO CLIENTE %s pipes %d %d  %d %d  %p\n", cliente->fifo, readPipe[0], readPipe[1], writePipe[0], writePipe[1], readPipe);
-
     pthread_create(&readThread, NULL, &gameCommReadThread, &gameReadThreadData);
     pthread_create(&writeThread, NULL, &gameCommWriteThread, &gameWriteThreadData);
 
     pthread_join(readThread, NULL);
     pthread_join(writeThread, NULL);
-
-    close(readPipe[0]);
 }
 
 void initJogo(Cliente* cliente, int *gameStarted){
     int readPipe[2], writePipe[2];         //Guarda os file descriptors
     pid_t pid;      //id do nosso processo
-    pid_t childPid;
-
-    // signal(SIGALRM, despertar);
+    int exit_status, status;
+    PEDIDO p;
+    char finalScoreStr[10];
 
     if (pipe(readPipe)==-1 || pipe(writePipe)==-1) { 
         fprintf(stderr, "Pipe Failed" ); 
@@ -84,29 +86,29 @@ void initJogo(Cliente* cliente, int *gameStarted){
         fprintf(stderr, "Fork failed!");
         return;
     } else if(pid == 0){           //Child process
-        childPid = getpid();
-
         close(readPipe[0]);
         close(writePipe[1]);
         dup2(readPipe[1], 1);          //Passar o (1 -> stdout) para o pipe de escrita
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
 
         execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
-
     } else {          //Processo Pai
         printf("\nProcesso Pai!! - %d\n", pid);
         cliente->jogo.gamePID = pid;
         handleClientGameCommunication(readPipe, writePipe, cliente, gameStarted);
         
-        int status;
-
         waitpid(pid, &status, 0); 		//processo pai espera que o filho termine
 
-        if ( WIFEXITED(status) ) {
-            int exit_status = WEXITSTATUS(status);
-            printf("Exit status of the child was %d\n", exit_status); 
+        if (WIFEXITED(status)) {
+            exit_status = WEXITSTATUS(status);
+            cliente->jogador.pontuacao = exit_status;
+            strcpy(p.nome, cliente->jogador.nome);
+            sprintf(finalScoreStr, "%d", exit_status);
+            printf("Exit status of the client %s was %d\n", cliente->jogador.nome, exit_status); 
+            sendResponse(p, "_final_score_", finalScoreStr, cliente->fifo, sizeof(PEDIDO));
         }
     }
+
 
     return;
 }

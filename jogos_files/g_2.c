@@ -88,6 +88,7 @@ int main(int argv, char *arg[]) {
         do {
             printf("Que palavra é esta? -> %s  --  %s\n", randomWord, wordDict[randomPos] );
             printf("$ ");
+            fflush(stdin);
             scanf("%s", wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {

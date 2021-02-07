@@ -19,5 +19,7 @@ void commandArbitroExit(Arbitro *arbitro);
 void commandArbitroS(Arbitro *arbitro, char* adminCommand, PEDIDO *p);
 void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, int isConSuspended);
 void stopGames(Arbitro *arbitro, int *gameStarted);
+void displayFinalScores(Arbitro *arbitro);
+void commandEndGame(Arbitro *arbitro, int *gameStarted);
 
 #endif

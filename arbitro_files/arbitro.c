@@ -158,8 +158,8 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
         commandArbitroPlayers(arbitro);
     }else if(strcmp(adminCommand, "games") == TRUE){
         commandArbitroGames(arbitro);
-    } else if(strcmp(adminCommand, "stop") == TRUE){
-        stopGames(arbitro, &readyToStart);
+    } else if(strcmp(adminCommand, "end") == TRUE){
+        commandEndGame(arbitro, &gameStarted);
     } else if(adminCommand[0] == 'k'){
         commandArbitroK(arbitro, adminCommand);
     } else if(adminCommand[0] == 's'){
@@ -224,9 +224,9 @@ void sorteioJogos(Arbitro *arbitro) {
         for(int i = 0; i < arbitro->nClientes; i++) {
             printf("Starting game for jogador %s\n", arbitro->clientes[i].jogador.nome);
             if(i == 0)
-                strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
+                strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
             else
-                strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
+                strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
 
             pthread_create(&arbitro->clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro->clientes[i]);
         }
