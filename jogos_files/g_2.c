@@ -53,7 +53,7 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
 
 int main(int argv, char *arg[]) {
     if(argv == 2) sleep(3);
-
+    initRandom();
     setbuf(stdout, NULL);
     char wordDict[WORD_DICT_SIZE][MAX_WORD_TAM] = { 
         "carro", "animal", "tigre",

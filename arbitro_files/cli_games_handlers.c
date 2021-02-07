@@ -15,7 +15,7 @@ void *gameCommReadThread(void *arg) {
         memset(readBuffer,0,strlen(readBuffer));
         
         n = 0;
-        while(read(grt->pipe[0], &buffer, 1) > 0 && buffer != 36){
+        while(read(grt->pipe[0], &buffer, 1) > 0 && buffer != '$'){
             readBuffer[n] = buffer;
             n++;
         }

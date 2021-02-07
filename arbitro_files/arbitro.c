@@ -182,7 +182,7 @@ void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     int n;
 
     n = read(fd, &p, sizeof(PEDIDO));
-
+    printf("COMANDO PLAYER: %s\n", p.comando);
     if(p.comando[0] == '#') // Command for arbitro
         handleClientCommandsForArbitro(arbitro, p, fifo, n);
     else { // Command for game...
@@ -224,7 +224,7 @@ void sorteioJogos(Arbitro *arbitro) {
         for(int i = 0; i < arbitro->nClientes; i++) {
             printf("Starting game for jogador %s\n", arbitro->clientes[i].jogador.nome);
             if(i == 0)
-                strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
+                strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
             else
                 strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
 
