@@ -3,8 +3,8 @@ CC=gcc
 all: client jogos arbitro
 
 jogos: utils.o
-	@${CC} jogos_files/g_1.c -o g_1.o
-	@${CC} jogos_files/g_2.c utils.o -o g_2.o
+	@${CC} jogos_files/g_1.c -o GameDir/g_1.o
+	@${CC} jogos_files/g_2.c utils.o -o GameDir/g_2.o
 	@echo Ficheiros dos jogos Compilados!
 
 client:
@@ -20,5 +20,6 @@ utils.o: utils.c
 
 clean:
 	@rm *.o
+	@rm GameDir/*.o
 	@rm pipe_*
 	@echo Ficheiros limpos! 
