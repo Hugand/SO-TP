@@ -18,6 +18,7 @@
 pid_t childPid;
 int readyToStart = 0;
 int gameStarted = 0;
+int serverFd;
 
 typedef struct THREAD_CLI_MSG {
     Arbitro *arbitro;
@@ -33,6 +34,12 @@ void despertar(int sinal){
 	kill(childPid, SIGUSR1);
 }
 
+void sigint_handler(int s) {
+    printf("\n");
+    close(serverFd);
+    unlink(FIFO_SRV);
+    exit(0);
+}
 /*
     Read environment variables GAMEDIR and MAXPLAYER
 */
@@ -135,12 +142,10 @@ void handleClientCommandsForArbitro(Arbitro *arbitro, PEDIDO p, char *fifo, int 
     // Check for #_connect_ command and if client isnt already connected
     // When a client make a connection request
     // sendResponse(p, "_test_command_", "", fifo, sizeof(p));
-    printf("[ NEW COMMAND ] => %s\n", p.comando);
     if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(arbitro, p.pid) == TRUE) { 
         handleConnectRequest(arbitro, p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE) {
         commandClientQuit(arbitro, &p);
-        printf("COMMAND QUIT\n");
     } else if(strcmp(p.comando, "#mygame") == TRUE)
         commandClientMyGame(arbitro, &p, fifo, n);
     else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
@@ -150,7 +155,7 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
     PEDIDO p;
     char adminCommand[40];
     scanf("%s", adminCommand);
-    // printf("=> %s\n", adminCommand);
+
     if(strcmp(adminCommand, "players") == TRUE){
         commandArbitroPlayers(arbitro);
     }else if(strcmp(adminCommand, "games") == TRUE){
@@ -177,7 +182,6 @@ void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
     int n;
 
     n = read(fd, &p, sizeof(PEDIDO));
-    printf("### CLI MSG THREAD 2 ### ===  %d  %s\n", n, p.comando);
 
     if(p.comando[0] == '#') // Command for arbitro
         handleClientCommandsForArbitro(arbitro, p, fifo, n);
@@ -190,14 +194,12 @@ void handleClientsMessages(Arbitro *arbitro, int fd, char *fifo) {
         } else {
             strcpy(client->jogo.gameCommand, p.comando);
             printf("To be processed by the game: %s\n", client->jogo.gameCommand);
-            // sendResponse(p, "_success_game_", "output do jogo...", fifo, n);
         }
     }
 }
 
 
 void *runClientMessagesThread(void *arg) {
-    printf("### CLI MSG THREAD ###\n");
     THREAD_CLI_MSG *tcm = (THREAD_CLI_MSG *)arg;
     Arbitro *arbitro = tcm->arbitro;
     char *fifo = tcm->fifo;
@@ -221,8 +223,6 @@ void *gameCommReadThread(void *arg) {
     PEDIDO p;
     int n = 0;
 
-    printf("GAME READ THREAD FOR %s\n", grt->cliente->jogador.nome);
-  
     close(grt->pipe[1]);
     do {
         readBuffer = malloc(sizeof(char) * 3000);
@@ -230,16 +230,13 @@ void *gameCommReadThread(void *arg) {
         
         n = 0;
         while(read(grt->pipe[0], &buffer, 1) > 0 && buffer != 36){
-            // printf("%c", buffer);
             readBuffer[n] = buffer;
             n++;
         }
 
-        printf("%s\n", readBuffer);
-        printf("%d\n", n);
         strcpy(p.nome, grt->cliente->jogador.nome);
         sendResponse(p, "_game_output_", readBuffer, grt->cliente->fifo, sizeof(PEDIDO));
-
+        free(readBuffer);
     } while(1);
 }
 
@@ -247,18 +244,12 @@ void *gameCommWriteThread(void *arg) {
     GAME_COMM_THRD_DATA *gwt = (GAME_COMM_THRD_DATA *) arg;
     char newLineChar = '\n';
 
-    printf("GAME WRITE THREAD FOR %s\n", gwt->cliente->jogador.nome);
-
     close(gwt->pipe[0]);
     do {
-        // printf("=====> %s\n\n", gwt->cliente->jogo.gameCommand);
         if(strcmp(gwt->cliente->jogo.gameCommand, "") != TRUE) {
-            // strcat(gwt->cliente->jogo.gameCommand, &newLineChar);
-            printf("NEW GAME COMMAND %d %s\n", sizeof( gwt->cliente->jogo.gameCommand), gwt->cliente->jogo.gameCommand);
             write(gwt->pipe[1], gwt->cliente->jogo.gameCommand, sizeof(gwt->cliente->jogo.gameCommand));
             write(gwt->pipe[1], &newLineChar, sizeof(newLineChar));
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
-            // strcpy(gwt->cliente->jogo.gameCommand, "");
         }
     } while(1);
 }
@@ -283,14 +274,6 @@ void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *c
     pthread_join(readThread, NULL);
     pthread_join(writeThread, NULL);
 
-    // alarm(10);
-    // } else if(res > 0 && FD_ISSET(0, &fds)) { // SEND THIS STDIN TO GAME
-    //     scanf("%s", writeBuffer);
-    //     puts(writeBuffer);
-    //     write(writePipe[1], writeBuffer, sizeof(writeBuffer));
-    // }
-
-
     close(readPipe[0]);
 }
 
@@ -300,11 +283,7 @@ void initJogo(Cliente* cliente){
 
     // signal(SIGALRM, despertar);
 
-    if (pipe(readPipe)==-1) { 
-        fprintf(stderr, "Pipe Failed" ); 
-        return; 
-    } 
-    if (pipe(writePipe)==-1) { 
+    if (pipe(readPipe)==-1 || pipe(writePipe)==-1) { 
         fprintf(stderr, "Pipe Failed" ); 
         return; 
     } 
@@ -320,13 +299,11 @@ void initJogo(Cliente* cliente){
         close(writePipe[1]);
         dup2(readPipe[1], 1);          //Passar o (1 -> stdout) para o pipe de escrita
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
-        // dup2(0, writePipe[0]);         //Passar o (stdin -> 0) para o pipe 
 
         execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
 
     } else {          //Processo Pai
         printf("\nProcesso Pai!!\n");
-        //close(writePipe[0]);
         
         handleClientGameCommunication(readPipe, writePipe, cliente);
         
@@ -372,7 +349,6 @@ void sorteioJogos(Arbitro *arbitro) {
 
 void start(){};
 
-
 void iniciaEspera(Arbitro *arbitro){
     signal(SIGALRM, start);
     while(readyToStart != 1){
@@ -388,7 +364,7 @@ int main(int argc, char *argv[]){
     Arbitro arbitro;
     PEDIDO p;
     RESPONSE resp;
-    int fd, n, res;
+    int n, res;
     char fifo[40];
     fd_set fds;
     THREAD_CLI_MSG thread_cli_msg;
@@ -396,21 +372,21 @@ int main(int argc, char *argv[]){
     initArbitro(&arbitro, argc, argv);
     printf("ARBITRO\n");
 
+    signal(SIGINT, sigint_handler);
+
     if(access(FIFO_SRV, F_OK)) {
         mkfifo(FIFO_SRV, 0600);
         printf("FIFO Criado...\n");
     }
 
-    fd = open(FIFO_SRV, O_RDWR);
+    serverFd = open(FIFO_SRV, O_RDWR);
     printf("FIFO aberto: '%s'\n", FIFO_SRV);
     printClientes(&arbitro);
 
     thread_cli_msg.arbitro = &arbitro;
-    thread_cli_msg.fd = fd;
+    thread_cli_msg.fd = serverFd;
     thread_cli_msg.stop = 0;
     strcpy(thread_cli_msg.fifo, fifo);
-
-    // printf("==> %s\n", fifo);
 
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
     // pthread_create(&gameT, NULL, &gameThread, NULL);
@@ -427,7 +403,7 @@ int main(int argc, char *argv[]){
     pthread_join(clientMessagesThread, NULL);
     // pthread_join(gameT, NULL);
 
-    close(fd);
+    close(serverFd);
     unlink(FIFO_SRV);
     exit(0);
 }

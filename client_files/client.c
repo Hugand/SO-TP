@@ -52,6 +52,12 @@ void processResponse(RESPONSE resp, char *fifo) {
         else
             printf("[ERRO] Erro ao conectar ao arbitro!\n");
 
+        putchar('\n');
+        unlink(fifo);
+        exit(0);
+    } else if(strcmp(resp.code, "_quit_") == TRUE) {
+	    printf("\n%s saiu do campeonato!\n", playerName);
+        putchar('\n');
         unlink(fifo);
         exit(0);
     } else if(strcmp(resp.code, "_success_arbitro_") == TRUE)
@@ -153,7 +159,6 @@ void main(){
         puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));
-        printf("%d %d\n\n", n, sizeof(PEDIDO));
         if(strcmp(p.comando, "sair") == TRUE)
             break;
     }

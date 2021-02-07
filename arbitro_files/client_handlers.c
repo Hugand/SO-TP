@@ -122,13 +122,22 @@ Jogo* getJogoByClienteName(Arbitro *arbitro, char *clienteName) {
     Handle the #quit command
 */
 void commandClientQuit(Arbitro *arbitro, PEDIDO *p) {
-    if(remove_cliente(arbitro, p->nome) == FALSE)
-        printf("[ERRO] Erro ao remover cliente\n");
-    else {
-        printf("[INFO] Cliente %s foi removido\n", p->nome);
-        kill(p->pid, SIGUSR2);
+    Cliente *cliente = getClienteByName(arbitro, p->nome);
+    char fifo[30];
+
+    if(cliente != NULL) {
+        strcpy(fifo, cliente->fifo);
+        if(remove_cliente(arbitro, p->nome) == FALSE) {
+            printf("[ERRO] Erro ao remover cliente\n");
+            sendResponse(*p, "_error_", "", cliente->fifo, sizeof(PEDIDO));
+        } else {
+            printf("[INFO] Cliente %s foi removido\n", p->nome);
+            sendResponse(*p, "_quit_", "", fifo, sizeof(PEDIDO));
+        }
+        printClientes(arbitro);
+    } else {
+        printf("[ERRO] Cliente %s nao existe\n", p->nome);
     }
-    printClientes(arbitro);
 }
 
 /*
