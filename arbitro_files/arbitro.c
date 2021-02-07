@@ -9,7 +9,7 @@
 #include <fcntl.h>
 #include <pthread.h>
 #include "../utils.h"
-
+#include <dirent.h>
 #include "../general.h"
 #include "client_handlers.h"
 #include "arbitro_handlers.h"
@@ -96,6 +96,20 @@ void getArgs(int argc, char *argv[]) {
     }
 }
 
+int countGames(){
+    DIR *directory = opendir(arbitro.GAMEDIR);
+    struct dirent *entry;
+    int count=0;
+
+    while((entry = readdir(directory)) != NULL){
+        if(entry->d_name[0] == 'g' && entry->d_name[1] == '_'){
+            arbitro.jogos[count] = entry->d_name;
+            count++;
+        }
+    }
+    return count;
+}
+
 /*
     Get env variables, cli args and initialize arbitro.
 */
@@ -106,6 +120,7 @@ void initArbitro(int argc, char* argv[]) {
     arbitro.nClientes = 0;
     arbitro.nJogos = 0;
     arbitro.clientes = NULL;
+    arbitro.nJogos = countGames();
 }
 /*
     Handle connection request: #_connect_ command
@@ -120,8 +135,6 @@ void handleConnectRequest(PEDIDO p, char *fifo, int n) {
     switch(add_cliente(&arbitro, &p)) {
         case TRUE:
             sendResponse(p, "_connection_accept_", "", fifo, n);
-
-            //sorteioJogos(arbitro);
 
             break;
         case MAX_PLAYER_ERR:
@@ -214,20 +227,19 @@ void *runClientMessagesThread(void *arg) {
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
     printf("====> %d\n", gameStarted);
-    initJogo(cliente, &gameStarted);
+    initJogo(cliente, &gameStarted, &arbitro);
 }
 
 void sorteioJogos() {
     if(gameStarted == FALSE) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
+        int num;
         
         for(int i = 0; i < arbitro.nClientes; i++) {
             printf("Starting game for jogador %s\n", arbitro.clientes[i].jogador.nome);
-            if(i == 0)
-                strcpy(arbitro.clientes[i].jogo.nome, "./g_2.o");
-            else
-                strcpy(arbitro.clientes[i].jogo.nome, "./g_2.o");
+            num = intUniformRnd(1,arbitro.nJogos);
+            strcpy(arbitro.clientes[i].jogo.nome , arbitro.jogos[num-1]) ;
 
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
@@ -262,7 +274,7 @@ int main(int argc, char *argv[]){
     char fifo[40];
     fd_set fds;
     THREAD_CLI_MSG thread_cli_msg;
-
+    initRandom();
     initArbitro(argc, argv);
     printf("ARBITRO\n");
 
