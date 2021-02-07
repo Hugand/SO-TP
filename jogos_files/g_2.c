@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 #include "../utils.h"
+#include <unistd.h>
 
 #define MAX_WORD_TAM 20
 #define WORD_DICT_SIZE 21
@@ -26,7 +27,7 @@ void showWelcomeMessage() {
     printf("  Neste jogo serão apresentadas varias palavras, uma de cada vez, cujas  \n");
     printf("  letras estao baralhadas.  O teu objetivo e descobrir a palavra certa.  \n");
     printf("  e  ganhar  o maior numero de pontos possivel. Sempre que acertes numa  \n");
-    printf("  palavra, ganhas 10 pontos e uma nova e te apresentada.                   \n");
+    printf("  palavra, ganhas 10 pontos e uma nova e te apresentada.                 \n");
     printf("                                                                         \n");
     printf("  Quando decidires terminar o jogo, escreve 'sair'.                      \n");
     printf("                                                                         \n");
@@ -50,9 +51,10 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
     }
 }
 
-int main() {
+int main(int argv, char *arg[]) {
+    if(argv == 2) sleep(3);
     initRandom();
-
+    setbuf(stdout, NULL);
     char wordDict[WORD_DICT_SIZE][MAX_WORD_TAM] = { 
         "carro", "animal", "tigre",
         "suposto","lisboa", "coimbra",
@@ -81,11 +83,11 @@ int main() {
         scrambleWord(randomWord);
 
         printf("\nNOVA PALAVRA!!!\n");
-        printf("Que palavra é esta? -> %s  --   %s\n", randomWord, wordDict[randomPos] );
         isLoopingWordInput = TRUE;
 
         do {
-            printf("#> ");
+            printf("Que palavra é esta? -> %s  --  %s\n", randomWord, wordDict[randomPos] );
+            printf("$ ");
             scanf("%s", wordInput);
 
             if(strcmp(wordInput, "sair") == TRUE) {
@@ -98,7 +100,7 @@ int main() {
                 printf("PALAVRA CORRETA!!!\n");
                 printf("SCORE: %d\n", pontuacao);   
             } else {
-                printf("Palavra incorreta...\n");
+                printf("\nPalavra incorreta...\n");
             }
 
         } while (isLoopingWordInput == TRUE);
