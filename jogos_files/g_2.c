@@ -10,6 +10,7 @@
 #include <string.h>
 #include <math.h>
 #include "../utils.h"
+#include <unistd.h>
 
 #define MAX_WORD_TAM 20
 #define WORD_DICT_SIZE 21
@@ -50,8 +51,9 @@ void scrambleWord(char word[MAX_WORD_TAM]) {
     }
 }
 
-int main() {
-    initRandom();
+int main(int argv, char *arg[]) {
+    if(argv == 2) sleep(3);
+
     setbuf(stdout, NULL);
     char wordDict[WORD_DICT_SIZE][MAX_WORD_TAM] = { 
         "carro", "animal", "tigre",
@@ -84,7 +86,7 @@ int main() {
         isLoopingWordInput = TRUE;
 
         do {
-            printf("Que palavra é esta? -> %s  --   %s\n", randomWord, wordDict[randomPos] );
+            printf("Que palavra é esta? -> %s  --  %s\n", randomWord, wordDict[randomPos] );
             printf("$ ");
             scanf("%s", wordInput);
 

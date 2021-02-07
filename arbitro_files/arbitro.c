@@ -119,8 +119,7 @@ void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
         case TRUE:
             sendResponse(p, "_connection_accept_", "", fifo, n);
 
-            if(arbitro->nClientes == 2)
-                sorteioJogos(arbitro);
+            sorteioJogos(arbitro);
 
             break;
         case MAX_PLAYER_ERR:
@@ -215,12 +214,12 @@ void* gameThread(void* arg){
 }
 
 void sorteioJogos(Arbitro *arbitro) {
-    if(gameStarted == 0) {
+    if(gameStarted == 0 && arbitro->nClientes == 2) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro->nClientes);
         for(int i = 0; i < arbitro->nClientes; i++) {
             printf("Starting game for jogador %s\n", arbitro->clientes[i].jogador.nome);
             // if(i == 0)
-                strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
+                strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
             // else
                 // strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
 

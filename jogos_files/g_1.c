@@ -41,6 +41,7 @@ void RandomNumber(){
     int number, numPlayer;
     int isLooping = 1;
     initRandom();
+    setbuf(stdout, NULL);
 
     showWelcomeMessage();
 
@@ -48,16 +49,16 @@ void RandomNumber(){
     signal(SIGUSR1, trataSinal);	//Quando se receber um sinal
 					//SIGUSR1 ele executa o trataSinal
     // Gerar um numero
-    number = sortNumber(0, 5);
+    number = sortNumber(0, 20);
 
     // Hipoteses
     printf("\n\nJa foi sorteado aleatoreamente um numero entre 0 e 100!\nTente advinhar-lo.");
     while(isLooping == 1){
-        printf("\nDigite um numero:$ ");
+        printf("\nDigite um numero - %d:\n$ ", number);
         scanf("%d", &numPlayer);
-        fflush(stdin);
+        // fflush(stdin);
 
-        if(numPlayer > -1 && numPlayer < 101){
+        if(numPlayer > -1 && numPlayer < 21){
             if(numPlayer == number){
                 printf("\nPARABENS acertou o numero!\t +10 Pontos");
                 pontuacao += 10;

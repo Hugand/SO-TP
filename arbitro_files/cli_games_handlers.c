@@ -34,8 +34,8 @@ void *gameCommWriteThread(void *arg) {
     close(gwt->pipe[0]);
     do {
         if(strcmp(gwt->cliente->jogo.gameCommand, "") != TRUE) {
-            write(gwt->pipe[1], gwt->cliente->jogo.gameCommand, sizeof(gwt->cliente->jogo.gameCommand));
-            write(gwt->pipe[1], &newLineChar, sizeof(newLineChar));
+            strncat(gwt->cliente->jogo.gameCommand, &newLineChar, sizeof(char));
+            write(gwt->pipe[1], gwt->cliente->jogo.gameCommand, strlen(gwt->cliente->jogo.gameCommand));
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
         }
     } while(1);

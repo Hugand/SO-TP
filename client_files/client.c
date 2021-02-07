@@ -156,11 +156,9 @@ void main(){
         fflush(stdout);
         
         scanf("%s", p.comando);
-        puts(p.comando);
+        // puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));
-        if(strcmp(p.comando, "sair") == TRUE)
-            break;
     }
     printf("SAINDO\n\n");
     quit = 1;
