@@ -26,6 +26,7 @@ typedef struct Jogo{
     char nome[TAM];
     pthread_t gameThread;
     char gameCommand[50];
+    pid_t gamePID;
 } Jogo;
 
 typedef struct Cliente{
@@ -71,6 +72,7 @@ typedef struct THREAD_CLI_MSG {
 typedef struct GAME_COMM_THRD_DATA {
     int *pipe;
     Cliente *cliente;
+    int *isThreadRunning;
 } GAME_COMM_THRD_DATA;
 
 

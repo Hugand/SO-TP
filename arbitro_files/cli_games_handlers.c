@@ -23,35 +23,39 @@ void *gameCommReadThread(void *arg) {
         strcpy(p.nome, grt->cliente->jogador.nome);
         sendResponse(p, "_game_output_", readBuffer, grt->cliente->fifo, sizeof(PEDIDO));
         free(readBuffer);
-    } while(1);
+    } while(*grt->isThreadRunning == TRUE);
 }
 
 void *gameCommWriteThread(void *arg) {
     GAME_COMM_THRD_DATA *gwt = (GAME_COMM_THRD_DATA *) arg;
     char newLineChar = '\n';
-    printf("WT JOGO CLIENTE %s pipes %d %d  %p\n", gwt->cliente->fifo, gwt->pipe[0], gwt->pipe[1], gwt->pipe);
+    printf("WT JOGO CLIENTE %s pipes -- %d\n", gwt->cliente->fifo, *gwt->isThreadRunning);
 
     close(gwt->pipe[0]);
     do {
         if(strcmp(gwt->cliente->jogo.gameCommand, "") != TRUE) {
+            printf("=>> %s\n", gwt->cliente->jogo.gameCommand);
             strncat(gwt->cliente->jogo.gameCommand, &newLineChar, sizeof(char));
             write(gwt->pipe[1], gwt->cliente->jogo.gameCommand, strlen(gwt->cliente->jogo.gameCommand));
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
         }
-    } while(1);
+    } while(*gwt->isThreadRunning == TRUE);
 }
 
-void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente) {
+void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente, int *gameStarted) {
     char writeBuffer[20];
     pthread_t readThread, writeThread;
     GAME_COMM_THRD_DATA gameReadThreadData, gameWriteThreadData;
 
     gameReadThreadData.pipe = readPipe;
     gameReadThreadData.cliente = cliente;
+    gameReadThreadData.isThreadRunning = gameStarted;
 
     gameWriteThreadData.pipe = writePipe;
     gameWriteThreadData.cliente = cliente;
+    gameWriteThreadData.isThreadRunning = gameStarted;
 
+    printf("===tt=> %d\n", *gameStarted);
     printf("BEFORE T JOGO CLIENTE %s pipes %d %d  %d %d  %p\n", cliente->fifo, readPipe[0], readPipe[1], writePipe[0], writePipe[1], readPipe);
 
     pthread_create(&readThread, NULL, &gameCommReadThread, &gameReadThreadData);
@@ -63,7 +67,7 @@ void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *c
     close(readPipe[0]);
 }
 
-void initJogo(Cliente* cliente){
+void initJogo(Cliente* cliente, int *gameStarted){
     int readPipe[2], writePipe[2];         //Guarda os file descriptors
     pid_t pid;      //id do nosso processo
     pid_t childPid;
@@ -90,8 +94,9 @@ void initJogo(Cliente* cliente){
         execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
 
     } else {          //Processo Pai
-        printf("\nProcesso Pai!!\n");
-        handleClientGameCommunication(readPipe, writePipe, cliente);
+        printf("\nProcesso Pai!! - %d\n", pid);
+        cliente->jogo.gamePID = pid;
+        handleClientGameCommunication(readPipe, writePipe, cliente, gameStarted);
         
         int status;
 

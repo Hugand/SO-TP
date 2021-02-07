@@ -2,6 +2,8 @@
     "files.associations": {
         "cli_games_handlers.h": "c",
         "client_handlers.h": "c",
-        "unistd.h": "c"
+        "unistd.h": "c",
+        "string.h": "c",
+        "arbitro_handlers.h": "c"
     }
 }

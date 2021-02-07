@@ -15,5 +15,5 @@
 
 void *gameCommReadThread(void *arg);
 void *gameCommWriteThread(void *arg);
-void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente);
-void initJogo(Cliente* cliente);
+void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente, int *gameStarted);
+void initJogo(Cliente* cliente, int *gameStarted);

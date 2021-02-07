@@ -17,9 +17,9 @@
 #include "cli_games_handlers.h"
 
 int readyToStart = 0;
-int gameStarted = 0;
+int gameStarted = FALSE;
 int serverFd;
-    pid_t childPid;
+pid_t childPid;
 
 void sorteioJogos(Arbitro *arbitro);
 
@@ -109,7 +109,7 @@ void initArbitro(Arbitro *arbitro, int argc, char* argv[]) {
     Handle connection request: #_connect_ command
 */
 void handleConnectRequest(Arbitro *arbitro, PEDIDO p, char *fifo, int n) {
-    if(gameStarted == 1) {
+    if(gameStarted == TRUE) {
         printf("[WARNING] Coneccao do jogador %s recusada. O campeonato ja comecou.\n", p.nome);
         sendResponse(p, "_connection_failed_", "_game_started_", fifo, n);
         return;
@@ -158,12 +158,14 @@ int handleArbitroCommands(Arbitro *arbitro, char *fifo) {
         commandArbitroPlayers(arbitro);
     }else if(strcmp(adminCommand, "games") == TRUE){
         commandArbitroGames(arbitro);
-    }else if(adminCommand[0] == 'k'){
+    } else if(strcmp(adminCommand, "stop") == TRUE){
+        stopGames(arbitro, &readyToStart);
+    } else if(adminCommand[0] == 'k'){
         commandArbitroK(arbitro, adminCommand);
-    }else if(adminCommand[0] == 's'){
+    } else if(adminCommand[0] == 's'){
         commandArbitroConSuspensa(arbitro, adminCommand, &p, TRUE);
         sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
-    }else if(adminCommand[0] == 'r'){
+    } else if(adminCommand[0] == 'r'){
         commandArbitroConSuspensa(arbitro, adminCommand, &p, FALSE);
         sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
@@ -210,29 +212,25 @@ void *runClientMessagesThread(void *arg) {
 
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
-    initJogo(cliente);
+    printf("====> %d\n", gameStarted);
+    initJogo(cliente, &gameStarted);
 }
 
 void sorteioJogos(Arbitro *arbitro) {
-    if(gameStarted == 0 && arbitro->nClientes == 2) {
+    if(gameStarted == FALSE && arbitro->nClientes == 2) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro->nClientes);
+        gameStarted = TRUE;
+        
         for(int i = 0; i < arbitro->nClientes; i++) {
             printf("Starting game for jogador %s\n", arbitro->clientes[i].jogador.nome);
-            // if(i == 0)
+            if(i == 0)
                 strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
-            // else
-                // strcpy(arbitro->clientes[i].jogo.nome, "./g_1.o");
+            else
+                strcpy(arbitro->clientes[i].jogo.nome, "./g_2.o");
 
             pthread_create(&arbitro->clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro->clientes[i]);
         }
-
-        gameStarted = 1;
     }
-
-    // for(int i = 0; i < arbitro->nClientes; i++) {
-    //     pthread_join(arbitro->clientes[i].jogo.gameThread, NULL);
-    // }
-
 }
 
 void start(){};
