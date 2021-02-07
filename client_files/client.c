@@ -45,13 +45,20 @@ void sigusr_handler(int s) {
 }
 
 void processResponse(RESPONSE resp, char *fifo) {
-    printf("\n");
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
+        if(strcmp(resp.desc, "_game_started_") == TRUE)
+            printf("[ARBITRO] Coneccao recusada. O campeonato ja comecou.\n");
         else
             printf("[ERRO] Erro ao conectar ao arbitro!\n");
 
+        putchar('\n');
+        unlink(fifo);
+        exit(0);
+    } else if(strcmp(resp.code, "_quit_") == TRUE) {
+	    printf("\n%s saiu do campeonato!\n", playerName);
+        putchar('\n');
         unlink(fifo);
         exit(0);
     } else if(strcmp(resp.code, "_success_arbitro_") == TRUE)
@@ -62,6 +69,8 @@ void processResponse(RESPONSE resp, char *fifo) {
         printf("[ARBITRO] Comunicacao jogador-jogo foi suspensa!\n");
     else if(strcmp(resp.code, "_con_retomada_") == TRUE)
         printf("[ARBITRO] Comunicacao jogador-jogo foi retomada!\n");
+    else if(strcmp(resp.code, "_game_output_") == TRUE)
+        printf(resp.desc);
     else if(strcmp(resp.code, "_error_") == TRUE)
         if(strcmp(resp.desc, "_no_game_assigned_") == TRUE)
             printf("[ERROR/ARBITRO]: Nao existe nenhum jogo associado a este cliente\n");
@@ -138,23 +147,18 @@ void main(){
     strcpy(p.nome, playerName);
     connect_to_arbitro(p, &fd);
 
-    printf("=> \n");
-
     int quit = 0;
 
     pthread_create(&readPipeThread, NULL, &readFromPipe, &quit);
-
 
     while(1) {
         printf("Comando => ");
         fflush(stdout);
         
         scanf("%s", p.comando);
+        // puts(p.comando);
         p.pid = getpid();
         n = write(fd, &p, sizeof(PEDIDO));
-
-        if(strcmp(p.comando, "sair") == TRUE)
-            break;
     }
     printf("SAINDO\n\n");
     quit = 1;

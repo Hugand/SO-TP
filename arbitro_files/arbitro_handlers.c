@@ -1,6 +1,4 @@
 #include "arbitro_handlers.h"
-#include <string.h>
-#include <stdlib.h>
 
 void commandArbitroPlayers(Arbitro *arbitro) {
     printf("\nLista de Jogadores:\n");
@@ -12,7 +10,7 @@ void commandArbitroPlayers(Arbitro *arbitro) {
 void commandArbitroGames(Arbitro *arbitro) {
     printf("\nLista de Jogos disponiveis:\n");
     for(int j=0; j<arbitro->nJogos; j++){
-        printf("\t-> %s\n", arbitro->jogos[j].nome);
+        printf("\t-> %s\n", arbitro->jogos[j]);
     }
 }
 
@@ -79,4 +77,14 @@ void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, 
     }
 
     free(clientName);
+}
+
+void stopGames(Arbitro *arbitro, int *gameStarted) {
+    *gameStarted = FALSE;
+    int finalScore;
+
+    for(int i = 0; i < arbitro->nClientes; i++) {
+        printf("KILLING %s %d\n", arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogo.gamePID);
+        kill(arbitro->clientes[i].jogo.gamePID, SIGUSR1);
+    }
 }

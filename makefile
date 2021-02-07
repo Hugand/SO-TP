@@ -21,5 +21,5 @@ utils.o: utils.c
 clean:
 	@rm *.o
 	@rm GameDir/*.o
-	@rm pipe_*
+	@find . -type p -delete
 	@echo Ficheiros limpos! 
