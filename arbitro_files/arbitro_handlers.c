@@ -42,7 +42,7 @@ void commandArbitroK(Arbitro *arbitro, char* adminCommand) {
 
 void commandArbitroExit(Arbitro *arbitro) {
     PEDIDO ptmp;
-    for(int i = 0; i < arbitro->nClientes; i++){
+    for(int i = 0; i < arbitro->nClientes; i){
         strcpy(ptmp.nome,arbitro->clientes[i].jogador.nome);
         ptmp.pid = arbitro->clientes[i].pid;
         commandClientQuit(arbitro, &ptmp);
