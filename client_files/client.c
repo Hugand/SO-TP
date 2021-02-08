@@ -15,22 +15,27 @@
 char fifo[40];
 char playerName[40];
 int isConnectionSuspended = FALSE;
+int fd;
 
-void sigint_handler(int s) {
-    int fd, n;
+void quitGame() {
+    int n;
     PEDIDO p;
 
     // Send disconnect message to arbitro
     if(access(fifo, F_OK) == 0) {
-        fd = open(FIFO_SRV, O_WRONLY);
+        // fdSrv = open(FIFO_SRV, O_WRONLY);
         strcpy(p.nome, playerName); 
         strcpy(p.comando, "#quit"); 
         n = write(fd, &p, sizeof(PEDIDO));
     }
 
     putchar('\n');
-    close(fd);
+}
+
+void sigint_handler(int s) {
+    quitGame();
     unlink(fifo);
+    close(fd);
     exit(0);
 }
 
@@ -44,7 +49,7 @@ void sigusr_handler(int s) {
 	sigint_handler(s);
 }
 
-void processResponse(RESPONSE resp, char *fifo) {
+int processResponse(RESPONSE resp, char *fifo) {
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
@@ -69,9 +74,10 @@ void processResponse(RESPONSE resp, char *fifo) {
         printf("[ARBITRO] Comunicacao jogador-jogo foi suspensa!\n");
     else if(strcmp(resp.code, "_con_retomada_") == TRUE)
         printf("[ARBITRO] Comunicacao jogador-jogo foi retomada!\n");
-    else if(strcmp(resp.code, "_announce_winner_") == TRUE)
+    else if(strcmp(resp.code, "_announce_winner_") == TRUE) {
         printf(resp.desc);
-    else if(strcmp(resp.code, "_game_output_") == TRUE)
+        return 1;
+    } else if(strcmp(resp.code, "_game_output_") == TRUE)
         printf(resp.desc);
     else if(strcmp(resp.code, "_final_score_") == TRUE)
         printf("\nO campeonato chegou ao fim!\nPontuacao final: %s\n\n", resp.desc);
@@ -82,17 +88,19 @@ void processResponse(RESPONSE resp, char *fifo) {
             printf("[ERROR/ARBITRO]: Comando invalido\n");
         else
             printf("[ERROR/ARBITRO]: Ocorreu um erro\n");
+
+    return 0;
 }
 
 /*
     Get response from arbitro
 */
-void getResponse(char *fifo) {
+int getResponse(char *fifo) {
     RESPONSE resp;
     int fdr = open(fifo, O_RDONLY);
     int n = read(fdr, &resp, sizeof(RESPONSE));
     close(fdr);
-    processResponse(resp, fifo);
+    return processResponse(resp, fifo);
 }
 
 /*
@@ -110,19 +118,36 @@ void connect_to_arbitro(PEDIDO p, int *fd) {
 }
 
 
-void *readFromPipe(void *arg) {
+void *readFromStdin(void *arg) {
     int *cancel = (int *)arg;
-    do {
-        getResponse(fifo);
-        printf("\nComando => ");
-    } while(*cancel == 0);
+    int n;
+    PEDIDO p;
+    strcpy(p.nome, playerName);
+
+    while(*cancel == 0) {
+        printf("Comando => ");
+        fflush(stdout);
+        
+        scanf("%s", p.comando);
+        p.pid = getpid();
+        n = write(fd, &p, sizeof(PEDIDO));
+    }
 }
 
+int askForReconect() {
+    char r;
 
-void main(){
+    do {
+        printf("\nPretende voltar a jogar? (s/n): ");
+        scanf("%c", &r);
+    } while(r != 's' && r != 'n');
+
+    return r == 's';
+}
+
+void runCliente(){
     pthread_t readPipeThread, readStdinThread;
-    int fd, n, res, fdr;
-    fd_set fds;
+    int n, quit = 0;
     PEDIDO p;
     RESPONSE resp;
     printf("\n\nPID <%d>\n\n", getpid());
@@ -151,25 +176,29 @@ void main(){
     strcpy(p.nome, playerName);
     connect_to_arbitro(p, &fd);
 
-    int quit = 0;
 
-    pthread_create(&readPipeThread, NULL, &readFromPipe, &quit);
+    pthread_create(&readStdinThread, NULL, &readFromStdin, &quit);
 
-    while(1) {
-        printf("Comando => ");
-        fflush(stdout);
-        
-        scanf("%s", p.comando);
-        p.pid = getpid();
-        n = write(fd, &p, sizeof(PEDIDO));
-    }
-    printf("SAINDO\n\n");
+    do {
+        if(getResponse(fifo) == 1) {
+            pthread_cancel(readStdinThread);
+            break;
+        }
+        printf("\nComando => ");
+    } while(1);
+
+    quitGame();
     quit = 1;
-
-    pthread_join(readPipeThread, NULL);
-
-    close(fd);
-    close(fdr);
+    
+    pthread_join(readStdinThread, NULL);
     unlink(fifo);
+    close(fd);
+}
+
+void main() {
+    do {
+        runCliente();
+    } while(askForReconect() == 1);
+
     exit(0);
 }

@@ -113,10 +113,10 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
         if (WIFEXITED(status)) {
             exit_status = WEXITSTATUS(status);
             cliente->jogador.pontuacao = exit_status;
-            strcpy(p.nome, cliente->jogador.nome);
-            sprintf(finalScoreStr, "%d", exit_status);
+            // strcpy(p.nome, cliente->jogador.nome);
+            // sprintf(finalScoreStr, "%d", exit_status);
             printf("Exit status of the client %s was %d\n", cliente->jogador.nome, exit_status); 
-            sendResponse(p, "_final_score_", finalScoreStr, cliente->fifo, sizeof(PEDIDO));
+            // sendResponse(p, "_final_score_", finalScoreStr, cliente->fifo, sizeof(PEDIDO));
         }
     }
 

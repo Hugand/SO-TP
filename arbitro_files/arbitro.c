@@ -22,9 +22,10 @@ int gameStarted = FALSE;
 int serverFd;
 pid_t childPid;
 Arbitro arbitro;            //Arbitro como variavel global
+pthread_t waitThread;
 
 void *sorteioJogos(void *arg);
-
+void* iniciaEspera(void* arg);
 // void despertar(int sinal){
 // 	kill(childPid, SIGUSR1);
 // }
@@ -122,6 +123,25 @@ void initArbitro(int argc, char* argv[]) {
     arbitro.clientes = NULL;
     arbitro.nJogos = countGames();
 }
+
+void finishGame() {
+    pthread_t waitThread;
+   
+    for(int i = 0; i < arbitro.nClientes; i++) {
+        pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
+
+        if(arbitro.winner == NULL ||
+        arbitro.clientes[i].jogador.pontuacao > arbitro.winner->jogador.pontuacao) {
+            arbitro.winner = &arbitro.clientes[i];
+        }
+    }
+
+    displayFinalScores(&arbitro);
+    clearClientes(&arbitro);
+    gameStarted = FALSE;
+    pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
+}
+
 /*
     Handle connection request: #_connect_ command
 */
@@ -158,6 +178,10 @@ void handleClientCommandsForArbitro(PEDIDO p, char *fifo, int n) {
         handleConnectRequest(p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE) {
         commandClientQuit(&arbitro, &p);
+        if(arbitro.nClientes < 2) {
+            stopGames(&arbitro, &gameStarted);
+            finishGame();
+        }
     } else if(strcmp(p.comando, "#mygame") == TRUE)
         commandClientMyGame(&arbitro, &p, fifo, n);
     else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
@@ -243,16 +267,8 @@ void *sorteioJogos(void *arg) {
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
 
-        for(int i = 0; i < arbitro.nClientes; i++) {
-            pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
-
-            if(arbitro.winner == NULL ||
-            arbitro.clientes[i].jogador.pontuacao > arbitro.winner->jogador.pontuacao) {
-                arbitro.winner = &arbitro.clientes[i];
-            }
-        }
-
-        displayFinalScores(&arbitro);
+        finishGame();
+        pthread_exit(NULL);      
     }
 }
 
@@ -260,7 +276,6 @@ void espera(int sinal){
     setbuf(stdout, NULL);
     pthread_t sorteioJogosThread;
     printf("\nVai se dar inicio aos jogos!");
-    // sorteioJogos();                 //Sorteia os jogos e inica os mesmos
     pthread_create(&sorteioJogosThread,  NULL, &sorteioJogos, NULL);
 }
 
@@ -280,7 +295,7 @@ void* iniciaEspera(void* arg){
 
 
 int main(int argc, char *argv[]){
-    pthread_t clientMessagesThread, arbitroCommandsThread, gameT, waitThread;
+    pthread_t clientMessagesThread, waitThread;
     PEDIDO p;
     RESPONSE resp;
     int n, res;
@@ -307,9 +322,8 @@ int main(int argc, char *argv[]){
     strcpy(thread_cli_msg.fifo, fifo);
 
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
-    // pthread_create(&gameT, NULL, &gameThread, NULL);
     pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
-    //iniciaEspera(&arbitro);
+
     do {
         printf("\n[ADMIN]: ");
         fflush(stdout);
@@ -320,7 +334,6 @@ int main(int argc, char *argv[]){
     thread_cli_msg.stop = 1;
 
     pthread_join(clientMessagesThread, NULL);
-    // pthread_join(gameT, NULL);
 
     close(serverFd);
     unlink(FIFO_SRV);
