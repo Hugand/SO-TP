@@ -26,9 +26,10 @@ pthread_t waitThread;
 
 void *sorteioJogos(void *arg);
 void* iniciaEspera(void* arg);
-// void despertar(int sinal){
-// 	kill(childPid, SIGUSR1);
-// }
+
+void despertar(int sinal){
+    stopGames(&arbitro, &gameStarted);
+}
 
 void sigint_handler(int s) {
     printf("\n");
@@ -218,7 +219,6 @@ void handleClientsMessages(int fd, char *fifo) {
     PEDIDO p;
     Cliente *client;
     int n;
-
     n = read(fd, &p, sizeof(PEDIDO));
     printf("COMANDO PLAYER: %s\n", p.comando);
     if(p.comando[0] == '#') // Command for arbitro
@@ -236,25 +236,33 @@ void handleClientsMessages(int fd, char *fifo) {
     }
 }
 
+void terminaThread(int sig){
+    pthread_exit(NULL);
+}
+
 void *runClientMessagesThread(void *arg) {
+    signal(SIGUSR1, terminaThread);
     THREAD_CLI_MSG *tcm = (THREAD_CLI_MSG *)arg;
     char *fifo = tcm->fifo;
     int fd = tcm->fd;
-
-    while(tcm->stop == 0) {
+    while(1) {
         handleClientsMessages(fd, fifo);
         printf("\n[ADMIN]: ");
     }
+    pthread_exit(NULL);
 }
 
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
     printf("====> %d\n", gameStarted);
     initJogo(cliente, &gameStarted, &arbitro);
+    pthread_exit(NULL);
 }
 
 void *sorteioJogos(void *arg) {
-    if(gameStarted == FALSE) {
+    signal(SIGALRM, despertar);
+    PEDIDO p;
+    if(gameStarted == FALSE && arbitro.nClientes >= 2) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
         int num;
@@ -263,9 +271,11 @@ void *sorteioJogos(void *arg) {
             printf("Starting game for jogador %s\n", arbitro.clientes[i].jogador.nome);
             num = intUniformRnd(1,arbitro.nJogos);
             strcpy(arbitro.clientes[i].jogo.nome , arbitro.jogos[num-1]) ;
-
+            sendResponse(p,"_game_sorted_",arbitro.clientes[i].jogo.nome,arbitro.clientes[i].fifo, sizeof(p));
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
+
+        alarm(arbitro.DURACAO_CAMPEONATO);
         finishGame();
 
         pthread_exit(NULL);      
@@ -324,7 +334,7 @@ int main(int argc, char *argv[]){
 
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
     pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
-
+    
     do {
         printf("\n[ADMIN]: ");
         fflush(stdout);
@@ -334,7 +344,7 @@ int main(int argc, char *argv[]){
 
     thread_cli_msg.stop = 1;
 
-    pthread_join(clientMessagesThread, NULL);
+    pthread_kill(clientMessagesThread, SIGUSR1);
 
     close(serverFd);
     unlink(FIFO_SRV);

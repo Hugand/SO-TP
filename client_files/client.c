@@ -50,6 +50,7 @@ void sigusr_handler(int s) {
 }
 
 int processResponse(RESPONSE resp, char *fifo) {
+    setbuf(stdout, NULL);
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("[ERRO] O numero maximo de jogadores foi atingido!\n");
@@ -77,7 +78,9 @@ int processResponse(RESPONSE resp, char *fifo) {
     else if(strcmp(resp.code, "_announce_winner_") == TRUE) {
         printf(resp.desc);
         return 1;
-    } else if(strcmp(resp.code, "_game_output_") == TRUE)
+    } else if(strcmp(resp.code, "_game_sorted_") == TRUE)
+        printf("\nJogo sorteado: %s \n\n", resp.desc);
+    else if(strcmp(resp.code, "_game_output_") == TRUE)
         printf(resp.desc);
     else if(strcmp(resp.code, "_final_score_") == TRUE)
         printf("\nO campeonato chegou ao fim!\nPontuacao final: %s\n\n", resp.desc);
