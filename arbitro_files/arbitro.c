@@ -125,9 +125,7 @@ void initArbitro(int argc, char* argv[]) {
 }
 
 void finishGame() {
-    printf("nCLIENTES %d\n", arbitro.nClientes);
     for(int i = 0; i < arbitro.nClientes; i++) {
-        printf("T%d ", i);
         pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
 
         if(arbitro.winner == NULL ||
@@ -139,15 +137,9 @@ void finishGame() {
     putchar('\n');
 
     displayFinalScores(&arbitro);
-    printf("=== 1 >\n");
     clearClientes(&arbitro);
-    printf("=== 2 >\n");
     gameStarted = FALSE;
-    printf("=== 3 >\n");
     pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
-    printf("=== 4 >\n");
-    printf("=== 5 %p >\n", waitThread);
-
 
     return;
 }
@@ -188,16 +180,11 @@ void handleClientCommandsForArbitro(PEDIDO p, char *fifo, int n) {
         handleConnectRequest(p, fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE) {
         commandClientQuit(&arbitro, &p);
-        if(arbitro.nClientes < 2) {
-            printf("======== STOP GAMES ===========\n");
+        if(arbitro.nClientes < 2)
             stopGames(&arbitro, &gameStarted);
-            printf("======== FINISH GAME ===========\n");
-        }
     } else if(strcmp(p.comando, "#mygame") == TRUE)
         commandClientMyGame(&arbitro, &p, fifo, n);
     else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
-    fflush(stdout);
-    printf("SAIR DO HANDLER\n");
 }
 
 int handleArbitroCommands(char *fifo) {
@@ -255,19 +242,15 @@ void *runClientMessagesThread(void *arg) {
     int fd = tcm->fd;
 
     while(tcm->stop == 0) {
-        printf("WAITINGUE\n");
         handleClientsMessages(fd, fifo);
         printf("\n[ADMIN]: ");
     }
-
-    printf("=?==?\n");
 }
 
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
     printf("====> %d\n", gameStarted);
     initJogo(cliente, &gameStarted, &arbitro);
-    printf("FIM GAME THREAD %s\n", cliente->jogador.nome);
 }
 
 void *sorteioJogos(void *arg) {
@@ -283,9 +266,7 @@ void *sorteioJogos(void *arg) {
 
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
- 
         finishGame();
-        printf("======== FIM FINISH GAME 2 ===========\n");
 
         pthread_exit(NULL);      
     }
@@ -309,7 +290,6 @@ void* iniciaEspera(void* arg){
             break;
         }
     }  
-    printf("INICIO ESPERA BREAK\n");
     pthread_exit(NULL);      
 }
 
@@ -353,8 +333,6 @@ int main(int argc, char *argv[]){
     } while(1);
 
     thread_cli_msg.stop = 1;
-
-    printf("====dadad\n");
 
     pthread_join(clientMessagesThread, NULL);
 

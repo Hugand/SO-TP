@@ -30,8 +30,6 @@ void *gameCommReadThread(void *arg) {
 
         free(readBuffer);
     } while(*grt->isThreadRunning == TRUE && grt->cliente != NULL);
-
-    close(grt->pipe[0]);
 }
 
 void *gameCommWriteThread(void *arg) {
@@ -47,7 +45,6 @@ void *gameCommWriteThread(void *arg) {
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
         }
     } while(*gwt->isThreadRunning == TRUE && gwt->cliente != NULL);
-    close(gwt->pipe[1]);
 }
 
 void handleClientGameCommunication(Cliente *cliente, int *gameStarted) {
@@ -69,19 +66,13 @@ void handleClientGameCommunication(Cliente *cliente, int *gameStarted) {
     pthread_join(cliente->jogo.readThread, NULL);
     pthread_join(cliente->jogo.writeThread, NULL);
 
-
-    for(int a = 0; a < 2; a++) {
-        close(cliente->jogo.readPipe[a]);
-        close(cliente->jogo.writePipe[a]);
+    for(int i = 0; i < 2; i++) {
+        close(cliente->jogo.readPipe[i]);
+        close(cliente->jogo.writePipe[i]);
     }
 }
 
-// static void handler(int signum) {
-// 	pthread_exit(NULL);
-// }
-
 void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
-    // int readPipe[2], writePipe[2];         //Guarda os file descriptors
     pid_t pid;      //id do nosso processo
     int exit_status, status;
     PEDIDO p;
@@ -114,25 +105,15 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
     } else {          //Processo Pai
         printf("\nProcesso Pai!! - %d\n", pid);
         cliente->jogo.gamePID = pid;
-        printf("11 isnull->%d pid->%d name->%s\n", cliente == NULL, cliente->jogo.gamePID, cliente->jogador.nome);
         handleClientGameCommunication(cliente, gameStarted);
         
         waitpid(cliente->jogo.gamePID, &status, 0); 		//processo pai espera que o filho termine
 
-        printf("12 isnull->%d pid->%d name->%s\n", cliente == NULL, cliente->jogo.gamePID, cliente->jogador.nome);
         if (WIFEXITED(status) && cliente != NULL) {
-        printf("2\n");
             exit_status = WEXITSTATUS(status);
-        printf("3\n");
             cliente->jogador.pontuacao = exit_status;
-            // strcpy(p.nome, cliente->jogador.nome);
-            // sprintf(finalScoreStr, "%d", exit_status);
-        printf("4\n");
             printf("Exit status of the client %s was %d\n", cliente->jogador.nome, exit_status); 
-            // sendResponse(p, "_final_score_", finalScoreStr, cliente->fifo, sizeof(PEDIDO));
-        printf("5\n");
         }
-        printf("6 CLI NULL\n");
     }
 
     return;

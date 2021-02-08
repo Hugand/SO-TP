@@ -1,3 +1,3 @@
 export GAMEDIR=./GameDir
-export MAXPLAYER=2
-./arbitro.o -d 4 -t 1
+export MAXPLAYER=5
+./arbitro.o -d 10 -t 15
