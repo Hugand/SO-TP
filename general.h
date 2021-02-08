@@ -44,6 +44,7 @@ typedef struct Arbitro{
     int MAXPLAYERS;
     char* jogos[TAM];                //Lista de Jogos
     Cliente* clientes;              //lista de Clientes
+    Cliente* winner;
     int nClientes;
     int nJogos;
 } Arbitro;

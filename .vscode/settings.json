@@ -4,6 +4,7 @@
         "client_handlers.h": "c",
         "unistd.h": "c",
         "string.h": "c",
-        "arbitro_handlers.h": "c"
+        "arbitro_handlers.h": "c",
+        "types.h": "c"
     }
 }

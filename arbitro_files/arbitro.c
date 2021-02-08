@@ -23,7 +23,7 @@ int serverFd;
 pid_t childPid;
 Arbitro arbitro;            //Arbitro como variavel global
 
-void sorteioJogos();
+void *sorteioJogos(void *arg);
 
 // void despertar(int sinal){
 // 	kill(childPid, SIGUSR1);
@@ -135,7 +135,6 @@ void handleConnectRequest(PEDIDO p, char *fifo, int n) {
     switch(add_cliente(&arbitro, &p)) {
         case TRUE:
             sendResponse(p, "_connection_accept_", "", fifo, n);
-
             break;
         case MAX_PLAYER_ERR:
             sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
@@ -173,8 +172,8 @@ int handleArbitroCommands(char *fifo) {
         commandArbitroPlayers(&arbitro);
     }else if(strcmp(adminCommand, "games") == TRUE){
         commandArbitroGames(&arbitro);
-    } else if(strcmp(adminCommand, "stop") == TRUE){
-        stopGames(&arbitro, &readyToStart);
+    } else if(strcmp(adminCommand, "end") == TRUE){
+        stopGames(&arbitro, &gameStarted);
     } else if(adminCommand[0] == 'k'){
         commandArbitroK(&arbitro, adminCommand);
     } else if(adminCommand[0] == 's'){
@@ -230,7 +229,7 @@ void* gameThread(void* arg){
     initJogo(cliente, &gameStarted, &arbitro);
 }
 
-void sorteioJogos() {
+void *sorteioJogos(void *arg) {
     if(gameStarted == FALSE) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
@@ -243,21 +242,35 @@ void sorteioJogos() {
 
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
+
+        for(int i = 0; i < arbitro.nClientes; i++) {
+            pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
+
+            if(arbitro.winner == NULL ||
+            arbitro.clientes[i].jogador.pontuacao > arbitro.winner->jogador.pontuacao) {
+                arbitro.winner = &arbitro.clientes[i];
+            }
+        }
+
+        displayFinalScores(&arbitro);
     }
 }
 
 void espera(int sinal){
     setbuf(stdout, NULL);
+    pthread_t sorteioJogosThread;
     printf("\nVai se dar inicio aos jogos!");
-    sorteioJogos();                 //Sorteia os jogos e inica os mesmos
+    // sorteioJogos();                 //Sorteia os jogos e inica os mesmos
+    pthread_create(&sorteioJogosThread,  NULL, &sorteioJogos, NULL);
 }
 
 void* iniciaEspera(void* arg){
+    Arbitro *arbtr = (Arbitro *)arg;
     signal(SIGALRM, espera);
     printf("Aguarde por outros jogadores...");
     while(1){
-        if(arbitro.nClientes >= 2){
-            alarm(arbitro.TEMPO_ESPERA);
+        if(arbtr->nClientes >= 2){
+            alarm(arbtr->TEMPO_ESPERA);
             sleep(12);
             break;
         }

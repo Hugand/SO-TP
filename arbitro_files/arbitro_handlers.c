@@ -79,9 +79,31 @@ void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, 
     free(clientName);
 }
 
+void displayFinalScores(Arbitro *arbitro) {
+    PEDIDO p;
+    char winnerDesc[70];
+
+printf("\n\n###############################\n");
+    printf("        Pontuação final        \n");
+    printf("###############################\n");
+    for(int i = 0; i < arbitro->nClientes; i++)
+        printf(" [ %d ] - %s - %dpts\n", i+1, arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogador.pontuacao);
+    printf("###############################\n");
+
+
+    for(int i = 0; i < arbitro->nClientes; i++) {
+        strcpy(p.nome, arbitro->clientes[i].jogador.nome);
+        if(arbitro->winner == &arbitro->clientes[i]) {
+            sprintf(winnerDesc, "Parabens! Venceu o campeonato com %dpts!", arbitro->winner->jogador.pontuacao);
+        } else {
+            sprintf(winnerDesc, "O vencedor do campeonato foi %s com %dpts!", arbitro->winner->jogador.nome, arbitro->winner->jogador.pontuacao);
+        }
+        sendResponse(p, "_announce_winner_", winnerDesc, arbitro->clientes[i].fifo, sizeof(p));
+    }
+}
+
 void stopGames(Arbitro *arbitro, int *gameStarted) {
     *gameStarted = FALSE;
-    int finalScore;
 
     for(int i = 0; i < arbitro->nClientes; i++) {
         printf("KILLING %s %d\n", arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogo.gamePID);
