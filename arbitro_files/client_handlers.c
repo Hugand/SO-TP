@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 #include <string.h>
 #include "client_handlers.h"
 
@@ -45,6 +46,19 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
 
     for(i = 0; i < arbitro->nClientes; i++) {
         if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
+            printf("DELETING %s\n", arbitro->clientes[i].jogador.nome);
+
+            // for(int a = 0; a < 2; a++) {
+            //     close(arbitro->clientes[i].jogo.readPipe[a]);
+            //     close(arbitro->clientes[i].jogo.writePipe[a]);
+            // }
+            printf("KILL RES %d %d\n", kill(SIGUSR1, arbitro->clientes[i].jogo.gamePID), arbitro->clientes[i].jogo.gamePID);
+            pthread_kill(arbitro->clientes[i].jogo.readThread, SIGUSR1);
+            pthread_kill(arbitro->clientes[i].jogo.writeThread, SIGUSR1);
+            
+            // if(arbitro->clientes[i].jogo.gamePID)
+            // pthread_kill(arbitro->clientes[i].jogo.gameThread, SIGUSR1);
+
             // If it is not removing the last remaining client
             if(arbitro->nClientes > 1) {
                 arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];
@@ -52,10 +66,12 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
                 tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes-1)*sizeof(Cliente));
                 if(tmpClientes == NULL) return FALSE;
 
+                // free(arbitro->clientes);
                 arbitro->clientes = tmpClientes;
                 arbitro->nClientes--;
+
             } else { // If there is only one client remaing to remove
-                free(arbitro->clientes);
+                free(arbitro->clientes); 
                 arbitro->clientes = NULL;
                 arbitro->nClientes = 0;
             }

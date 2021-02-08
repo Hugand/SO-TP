@@ -5,6 +5,7 @@
         "unistd.h": "c",
         "string.h": "c",
         "arbitro_handlers.h": "c",
-        "types.h": "c"
+        "types.h": "c",
+        "request_functions.h": "c"
     }
 }
