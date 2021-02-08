@@ -93,7 +93,6 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
         close(writePipe[1]);
         dup2(readPipe[1], 1);          //Passar o (1 -> stdout) para o pipe de escrita
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
-        puts("AQUI");
         char *gameDir = arbitro->GAMEDIR;
         char path[100];
         sprintf(path, "%s/%s", gameDir, cliente->jogo.nome);
@@ -101,7 +100,6 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
         // strcat(path,gameName);
         puts(path);
         execlp(path, path, NULL);
-        puts("ignoire");
 
     } else {          //Processo Pai
         printf("\nProcesso Pai!! - %d\n", pid);
