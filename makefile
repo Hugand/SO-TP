@@ -12,7 +12,7 @@ client:
 	@echo Ficheiros dos Clientes Compilados!
 
 arbitro:
-	@${CC} arbitro_files/*.c -o arbitro.o -lpthread
+	@${CC} arbitro_files/*.c utils.o -o arbitro.o -lpthread
 	@echo Ficheiros do arbitro Compilados!
 
 utils.o: utils.c

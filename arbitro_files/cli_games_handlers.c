@@ -72,7 +72,7 @@ void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *c
     pthread_join(writeThread, NULL);
 }
 
-void initJogo(Cliente* cliente, int *gameStarted){
+void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
     int readPipe[2], writePipe[2];         //Guarda os file descriptors
     pid_t pid;      //id do nosso processo
     int exit_status, status;
@@ -93,8 +93,16 @@ void initJogo(Cliente* cliente, int *gameStarted){
         close(writePipe[1]);
         dup2(readPipe[1], 1);          //Passar o (1 -> stdout) para o pipe de escrita
         dup2(writePipe[0], 0);         //Passar o (stdin -> 0) para o pipe 
+        puts("AQUI");
+        char *gameDir = arbitro->GAMEDIR;
+        char path[100];
+        sprintf(path, "%s/%s", gameDir, cliente->jogo.nome);
+        // strcpy(gameName, cliente->jogo.nome);
+        // strcat(path,gameName);
+        puts(path);
+        execlp(path, path, NULL);
+        puts("ignoire");
 
-        execlp(cliente->jogo.nome, cliente->jogo.nome, NULL);
     } else {          //Processo Pai
         printf("\nProcesso Pai!! - %d\n", pid);
         cliente->jogo.gamePID = pid;
