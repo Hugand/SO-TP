@@ -6,6 +6,8 @@
         "string.h": "c",
         "arbitro_handlers.h": "c",
         "types.h": "c",
-        "request_functions.h": "c"
+        "request_functions.h": "c",
+        "stdlib.h": "c",
+        "time.h": "c"
     }
 }

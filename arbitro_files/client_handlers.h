@@ -19,7 +19,7 @@ Cliente* getClienteByName(Arbitro *arbitro, char *name);
 
 
 void commandClientQuit(Arbitro *arbitro, PEDIDO *p);
-void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n);
+void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *name, int n);
 
 #endif // GENERAL_
 

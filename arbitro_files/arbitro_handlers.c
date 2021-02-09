@@ -64,10 +64,14 @@ void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, 
             doesNameExist = 1;
             p->pid = arbitro->clientes[i].pid;
             strcpy(p->nome, arbitro->clientes[i].jogador.nome);
-            if(isConSuspended == TRUE)
+            if(isConSuspended == TRUE){
                 printf("Comunicacao suspensa para %s\n", arbitro->clientes[i].jogador.nome);
-            else
+                sendResponse(*p, "_con_suspensa_", "", arbitro->clientes[i].fifo, sizeof(*p));
+            }else{
                 printf("Comunicacao retomana para %s\n", arbitro->clientes[i].jogador.nome);
+                sendResponse(*p, "_con_retomada_", "", arbitro->clientes[i].fifo, sizeof(*p));
+            }
+            
             break;
         }
     }
