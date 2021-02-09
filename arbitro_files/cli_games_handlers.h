@@ -15,5 +15,6 @@
 
 void *gameCommReadThread(void *arg);
 void *gameCommWriteThread(void *arg);
-void handleClientGameCommunication(int readPipe[2], int writePipe[2], Cliente *cliente, int *gameStarted);
+void handleClientGameCommunication(Cliente *cliente, int *gameStarted);
 void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro);
+void threadSignalHandler(int s);

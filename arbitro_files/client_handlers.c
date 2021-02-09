@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <signal.h>
+#include <pthread.h>
 #include <string.h>
 #include "client_handlers.h"
 
@@ -19,6 +20,7 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     Cliente* tmpClientes;
 
     strcpy(newCliente.jogador.nome, p->nome);
+    strcpy(newCliente.jogo.nome, "");
     sprintf(newCliente.fifo, FIFO_CLI, newCliente.jogador.nome);
     newCliente.jogador.pontuacao = 0;
     newCliente.pid = p->pid;
@@ -45,6 +47,12 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
 
     for(i = 0; i < arbitro->nClientes; i++) {
         if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
+            if(arbitro->clientes[i].jogo.gamePID > 0) {
+                printf("KILL RES %d %d\n", kill(SIGUSR1, arbitro->clientes[i].jogo.gamePID), arbitro->clientes[i].jogo.gamePID);
+                pthread_kill(arbitro->clientes[i].jogo.readThread, SIGUSR1);
+                pthread_kill(arbitro->clientes[i].jogo.writeThread, SIGUSR1);
+            }
+            
             // If it is not removing the last remaining client
             if(arbitro->nClientes > 1) {
                 arbitro->clientes[i] = arbitro->clientes[arbitro->nClientes-1];
@@ -52,10 +60,12 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
                 tmpClientes = realloc(arbitro->clientes, (arbitro->nClientes-1)*sizeof(Cliente));
                 if(tmpClientes == NULL) return FALSE;
 
+                // free(arbitro->clientes);
                 arbitro->clientes = tmpClientes;
                 arbitro->nClientes--;
+
             } else { // If there is only one client remaing to remove
-                free(arbitro->clientes);
+                free(arbitro->clientes); 
                 arbitro->clientes = NULL;
                 arbitro->nClientes = 0;
             }
@@ -143,13 +153,21 @@ void commandClientQuit(Arbitro *arbitro, PEDIDO *p) {
 /*
     Handle the #mygame command
 */
-void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *fifo, int n) {
-    Jogo* clientGameInfo = getJogoByClienteName(arbitro, p->nome);
+void commandClientMyGame(Arbitro *arbitro, PEDIDO *p, char *name, int n) {
+    // Jogo* clientGameInfo = getJogoByClienteName(arbitro, p->nome);
+    Cliente* cliente = getClienteByName(arbitro, name);
+
+    printf(cliente->jogo.nome);
     
-    if(clientGameInfo == NULL)
-        sendResponse(*p, "_error_", "_no_game_assigned_", fifo, n);
-    else
-        sendResponse(*p, "_success_arbitro_", clientGameInfo->nome, fifo, n);
+    if(cliente == NULL)
+        printf("\n[ERRO] Nao existe o cliente %s\n", name);
+    else if(strcmp(cliente->jogo.nome, "") == TRUE) {
+        printf("\n[INFO] Nao foi associado nenhum jogo\n");
+        sendResponse(*p, "_error_", "_no_game_assigned_", cliente->fifo, sizeof(*p));
+    } else {
+        printf("\n[INFO] Jogo associado ao jogador %s => %s\n", cliente->jogador.nome, cliente->jogo.nome);
+        sendResponse(*p, "_success_arbitro_", cliente->jogo.nome, cliente->fifo, sizeof(*p));
+    }
 
 }
 

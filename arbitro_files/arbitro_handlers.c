@@ -64,10 +64,14 @@ void commandArbitroConSuspensa(Arbitro *arbitro, char* adminCommand, PEDIDO *p, 
             doesNameExist = 1;
             p->pid = arbitro->clientes[i].pid;
             strcpy(p->nome, arbitro->clientes[i].jogador.nome);
-            if(isConSuspended == TRUE)
+            if(isConSuspended == TRUE){
                 printf("Comunicacao suspensa para %s\n", arbitro->clientes[i].jogador.nome);
-            else
+                sendResponse(*p, "_con_suspensa_", "", arbitro->clientes[i].fifo, sizeof(*p));
+            }else{
                 printf("Comunicacao retomana para %s\n", arbitro->clientes[i].jogador.nome);
+                sendResponse(*p, "_con_retomada_", "", arbitro->clientes[i].fifo, sizeof(*p));
+            }
+            
             break;
         }
     }
@@ -94,9 +98,9 @@ printf("\n\n###############################\n");
     for(int i = 0; i < arbitro->nClientes; i++) {
         strcpy(p.nome, arbitro->clientes[i].jogador.nome);
         if(arbitro->winner == &arbitro->clientes[i]) {
-            sprintf(winnerDesc, "Parabens! Venceu o campeonato com %dpts!", arbitro->winner->jogador.pontuacao);
+            sprintf(winnerDesc, "\nPontuacao final: %d\n\nParabens! Venceu o campeonato com %dpts!", arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.pontuacao);
         } else {
-            sprintf(winnerDesc, "O vencedor do campeonato foi %s com %dpts!", arbitro->winner->jogador.nome, arbitro->winner->jogador.pontuacao);
+            sprintf(winnerDesc, "\nPontuacao final: %d\n\nO vencedor do campeonato foi %s com %dpts!", arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.nome, arbitro->winner->jogador.pontuacao);
         }
         sendResponse(p, "_announce_winner_", winnerDesc, arbitro->clientes[i].fifo, sizeof(p));
     }
@@ -108,5 +112,35 @@ void stopGames(Arbitro *arbitro, int *gameStarted) {
     for(int i = 0; i < arbitro->nClientes; i++) {
         printf("KILLING %s %d\n", arbitro->clientes[i].jogador.nome, arbitro->clientes[i].jogo.gamePID);
         kill(arbitro->clientes[i].jogo.gamePID, SIGUSR1);
+
+
+
+        // for(int a = 0; a < 2; a++) {
+        //     close(arbitro->clientes[i].jogo.readPipe[a]);
+        //     close(arbitro->clientes[i].jogo.writePipe[a]);
+        // }
+        printf("KILL RES %d %d\n", kill(SIGUSR1, arbitro->clientes[i].jogo.gamePID), arbitro->clientes[i].jogo.gamePID);
+        pthread_kill(arbitro->clientes[i].jogo.readThread, SIGUSR1);
+        pthread_kill(arbitro->clientes[i].jogo.writeThread, SIGUSR1);
+        
+            // pthread_kill(arbitro->clientes[i].jogo.readThread, SIGUSR1);
+            // pthread_kill(arbitro->clientes[i].jogo.writeThread, SIGUSR1);
+            // if(arbitro->clientes[i].jogo.gamePID)
+            //    printf("KILL RES %d %d\n", kill(SIGUSR1, arbitro->clientes[i].jogo.gamePID), arbitro->clientes[i].jogo.gamePID);
+            // pthread_kill(arbitro->clientes[i].jogo.gameThread, SIGUSR1);
+
     }
+}
+
+void clearClientes(Arbitro *arbitro) {
+    PEDIDO p;
+
+    for(int i = 0; i < arbitro->nClientes; i++) {
+        strcpy(p.nome, arbitro->clientes[i].jogador.nome);
+        sendResponse(p, "_quit_", "", arbitro->clientes[i].fifo, sizeof(p));
+    }
+
+    free(arbitro->clientes);
+    arbitro->clientes = NULL;
+    arbitro->nClientes = 0;
 }
