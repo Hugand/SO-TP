@@ -22,8 +22,10 @@ int gameStarted = FALSE;
 int serverFd;
 pid_t childPid;
 Arbitro arbitro;            //Arbitro como variavel global
+pthread_t waitThread;
 
 void *sorteioJogos(void *arg);
+void* iniciaEspera(void* arg);
 
 void despertar(int sinal){
     stopGames(&arbitro, &gameStarted);
@@ -122,26 +124,47 @@ void initArbitro(int argc, char* argv[]) {
     arbitro.clientes = NULL;
     arbitro.nJogos = countGames();
 }
+
+void finishGame() {
+    for(int i = 0; i < arbitro.nClientes; i++) {
+        pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
+
+        if(arbitro.winner == NULL ||
+        arbitro.clientes[i].jogador.pontuacao > arbitro.winner->jogador.pontuacao) {
+            arbitro.winner = &arbitro.clientes[i];
+        }
+    }
+
+    putchar('\n');
+
+    displayFinalScores(&arbitro);
+    clearClientes(&arbitro);
+    gameStarted = FALSE;
+    pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
+
+    return;
+}
+
 /*
     Handle connection request: #_connect_ command
 */
 void handleConnectRequest(PEDIDO p, char *fifo, int n) {
     if(gameStarted == TRUE) {
         printf("[WARNING] Coneccao do jogador %s recusada. O campeonato ja comecou.\n", p.nome);
-        sendResponse(p, "_connection_failed_", "_game_started_", fifo, n);
+        sendResponse(p, "_connection_failed_", "_game_started_", getClienteByName(&arbitro, p.nome)->fifo, n);
         return;
     }
 
     switch(add_cliente(&arbitro, &p)) {
         case TRUE:
-            sendResponse(p, "_connection_accept_", "", fifo, n);
+            sendResponse(p, "_connection_accept_", "", getClienteByName(&arbitro, p.nome)->fifo, n);
             break;
         case MAX_PLAYER_ERR:
-            sendResponse(p, "_connection_failed_", "_max_players_", fifo, n);
+            sendResponse(p, "_connection_failed_", "_max_players_", getClienteByName(&arbitro, p.nome)->fifo, n);
             break;
         case FALSE:
         default:
-            sendResponse(p, "_connection_failed_", "", fifo, n);
+            sendResponse(p, "_connection_failed_", "", getClienteByName(&arbitro, p.nome)->fifo, n);
     }
     printClientes(&arbitro);
 }
@@ -150,20 +173,22 @@ void handleConnectRequest(PEDIDO p, char *fifo, int n) {
 /*
     Handle command for the arbitro internal usage
 */
-void handleClientCommandsForArbitro(PEDIDO p, char *fifo, int n) {
+void handleClientCommandsForArbitro(PEDIDO p, int n) {
     // Check for #_connect_ command and if client isnt already connected
     // When a client make a connection request
     // sendResponse(p, "_test_command_", "", fifo, sizeof(p));
     if(strcmp(p.comando, "#_connect_") == TRUE && validate_client_connected(&arbitro,p.pid) == TRUE) { 
-        handleConnectRequest(p, fifo, n);
+        handleConnectRequest(p, getClienteByName(&arbitro, p.nome)->fifo, n);
     } else if(strcmp(p.comando, "#quit") == TRUE) {
         commandClientQuit(&arbitro, &p);
+        if(arbitro.nClientes < 2)
+            stopGames(&arbitro, &gameStarted);
     } else if(strcmp(p.comando, "#mygame") == TRUE)
-        commandClientMyGame(&arbitro, &p, fifo, n);
-    else sendResponse(p, "_error_", "_invalid_command_", fifo, n);
+        commandClientMyGame(&arbitro, &p, p.nome, n);
+    else sendResponse(p, "_error_", "_invalid_command_", getClienteByName(&arbitro, p.nome)->fifo, n);
 }
 
-int handleArbitroCommands(char *fifo) {
+int handleArbitroCommands() {
     PEDIDO p;
     char adminCommand[40];
     scanf("%s", adminCommand);
@@ -178,10 +203,10 @@ int handleArbitroCommands(char *fifo) {
         commandArbitroK(&arbitro, adminCommand);
     } else if(adminCommand[0] == 's'){
         commandArbitroConSuspensa(&arbitro, adminCommand, &p, TRUE);
-        sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
+        // sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
     } else if(adminCommand[0] == 'r'){
         commandArbitroConSuspensa(&arbitro, adminCommand, &p, FALSE);
-        sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
+        // sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(&arbitro);
         return 1;
@@ -190,20 +215,20 @@ int handleArbitroCommands(char *fifo) {
     return 0;
 }
 
-void handleClientsMessages(int fd, char *fifo) {
+void handleClientsMessages(int fd) {
     PEDIDO p;
     Cliente *client;
     int n;
     n = read(fd, &p, sizeof(PEDIDO));
     printf("COMANDO PLAYER: %s\n", p.comando);
     if(p.comando[0] == '#') // Command for arbitro
-        handleClientCommandsForArbitro(p, fifo, n);
+        handleClientCommandsForArbitro(p, n);
     else { // Command for game...
         client = getClienteByName(&arbitro, p.nome);
 
         if(client->isConnectionSuspended == TRUE) {
             printf("Comunicação de %s suspensa\n", client->jogador.nome);
-            sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", fifo, n);
+            sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", client->fifo, n);
         } else {
             strcpy(client->jogo.gameCommand, p.comando);
             printf("To be processed by the game: %s\n", client->jogo.gameCommand);
@@ -218,10 +243,11 @@ void terminaThread(int sig){
 void *runClientMessagesThread(void *arg) {
     signal(SIGUSR1, terminaThread);
     THREAD_CLI_MSG *tcm = (THREAD_CLI_MSG *)arg;
-    char *fifo = tcm->fifo;
+    // char *fifo = tcm->fifo;
     int fd = tcm->fd;
     while(1) {
-        handleClientsMessages(fd, fifo);
+        // handleClientsMessages(fd, fifo);
+        handleClientsMessages(fd);
         printf("\n[ADMIN]: ");
     }
     pthread_exit(NULL);
@@ -237,7 +263,7 @@ void* gameThread(void* arg){
 void *sorteioJogos(void *arg) {
     signal(SIGALRM, despertar);
     PEDIDO p;
-    if(gameStarted == FALSE) {
+    if(gameStarted == FALSE && arbitro.nClientes >= 2) {
         printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
         int num;
@@ -249,18 +275,11 @@ void *sorteioJogos(void *arg) {
             sendResponse(p,"_game_sorted_",arbitro.clientes[i].jogo.nome,arbitro.clientes[i].fifo, sizeof(p));
             pthread_create(&arbitro.clientes[i].jogo.gameThread, NULL, &gameThread ,&arbitro.clientes[i]);
         }
+
         alarm(arbitro.DURACAO_CAMPEONATO);
+        finishGame();
 
-        for(int i = 0; i < arbitro.nClientes; i++) {
-            pthread_join(arbitro.clientes[i].jogo.gameThread, NULL);
-
-            if(arbitro.winner == NULL ||
-            arbitro.clientes[i].jogador.pontuacao > arbitro.winner->jogador.pontuacao) {
-                arbitro.winner = &arbitro.clientes[i];
-            }
-        }
-
-        displayFinalScores(&arbitro);
+        pthread_exit(NULL);      
     }
 }
 
@@ -268,7 +287,6 @@ void espera(int sinal){
     setbuf(stdout, NULL);
     pthread_t sorteioJogosThread;
     printf("\nVai se dar inicio aos jogos!");
-    // sorteioJogos();                 //Sorteia os jogos e inica os mesmos
     pthread_create(&sorteioJogosThread,  NULL, &sorteioJogos, NULL);
 }
 
@@ -279,7 +297,7 @@ void* iniciaEspera(void* arg){
     while(1){
         if(arbtr->nClientes >= 2){
             alarm(arbtr->TEMPO_ESPERA);
-            sleep(12);
+            sleep(arbtr->TEMPO_ESPERA+1);
             break;
         }
     }  
@@ -288,16 +306,17 @@ void* iniciaEspera(void* arg){
 
 
 int main(int argc, char *argv[]){
-    pthread_t clientMessagesThread, arbitroCommandsThread, gameT, waitThread;
+    pthread_t clientMessagesThread;
     PEDIDO p;
     RESPONSE resp;
     int n, res;
-    char fifo[40];
+    // char fifo[40];
     fd_set fds;
     THREAD_CLI_MSG thread_cli_msg;
     initRandom();
     initArbitro(argc, argv);
     printf("ARBITRO\n");
+    signal(SIGUSR1, threadSignalHandler);
 
     signal(SIGINT, sigint_handler);
 
@@ -312,17 +331,19 @@ int main(int argc, char *argv[]){
 
     thread_cli_msg.fd = serverFd;
     thread_cli_msg.stop = 0;
-    strcpy(thread_cli_msg.fifo, fifo);
+    // strcpy(thread_cli_msg.fifo, fifo);
 
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
-    // pthread_create(&gameT, NULL, &gameThread, NULL);
     pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
+    
     do {
         printf("\n[ADMIN]: ");
         fflush(stdout);
         
-        if(handleArbitroCommands(fifo) == 1) break;
+        if(handleArbitroCommands() == 1) break;
     } while(1);
+
+    thread_cli_msg.stop = 1;
 
     pthread_kill(clientMessagesThread, SIGUSR1);
 

@@ -3,7 +3,7 @@ CC=gcc
 all: client jogos arbitro
 
 jogos: utils.o
-	@${CC} jogos_files/g_RandomNumber.c -o GameDir/g_g_RandomNumber.o
+	@${CC} jogos_files/g_RandomNumber.c -o GameDir/g_RandomNumber.o
 	@${CC} jogos_files/g_ScrambledWords.c utils.o -o GameDir/g_ScrambledWords.o
 	@echo Ficheiros dos jogos Compilados!
 

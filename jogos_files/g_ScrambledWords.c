@@ -17,6 +17,7 @@
 int pontuacao=0;
 
 void trataSinal(int sinal){
+    printf("MORRENDO\n");
 	exit(pontuacao);
 }
 

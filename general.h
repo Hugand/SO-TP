@@ -25,6 +25,8 @@ typedef struct Jogador{
 typedef struct Jogo{
     char nome[TAM];
     pthread_t gameThread;
+    pthread_t readThread, writeThread;
+    int readPipe[2], writePipe[2];
     char gameCommand[50];
     pid_t gamePID;
 } Jogo;
