@@ -23,7 +23,6 @@ void quitGame() {
 
     // Send disconnect message to arbitro
     if(access(fifo, F_OK) == 0) {
-        // fdSrv = open(FIFO_SRV, O_WRONLY);
         strcpy(p.nome, playerName); 
         strcpy(p.comando, "#quit"); 
         n = write(fd, &p, sizeof(PEDIDO));
@@ -50,7 +49,6 @@ void sigusr_handler(int s) {
 }
 
 int processResponse(RESPONSE resp, char *fifo) {
-    // setbuf(stdout, NULL);
     if(strcmp(resp.code, "_connection_failed_") == TRUE) {
         if(strcmp(resp.desc, "_max_players_") == TRUE)
             printf("\n[ERRO] O numero maximo de jogadores foi atingido!\n");
@@ -59,13 +57,13 @@ int processResponse(RESPONSE resp, char *fifo) {
         else
             printf("\n[ERRO] Erro ao conectar ao arbitro!\n");
 
-        putchar('\n');
         unlink(fifo);
+        close(fd);
         exit(0);
     } else if(strcmp(resp.code, "_quit_") == TRUE) {
 	    printf("\n\n%s saiu do campeonato!\n", playerName);
-        putchar('\n');
         unlink(fifo);
+        close(fd);
         exit(0);
     } else if(strcmp(resp.code, "_success_arbitro_") == TRUE)
         printf("\n[ARBITRO]: %s\n", resp.desc);
@@ -128,7 +126,7 @@ void *readFromStdin(void *arg) {
     strcpy(p.nome, playerName);
 
     while(*cancel == 0) {
-        printf("Comando => ");
+        printf("\n[Comando]: ");
         fflush(stdout);
         
         scanf("%s", p.comando);
@@ -153,7 +151,6 @@ void runCliente(){
     int n, quit = 0;
     PEDIDO p;
     RESPONSE resp;
-    printf("\n\nPID <%d>\n\n", getpid());
 
     signal(SIGINT, sigint_handler); // Ignore ^C
     signal(SIGUSR2, sigusr_handler);
@@ -187,7 +184,7 @@ void runCliente(){
             pthread_cancel(readStdinThread);
             break;
         }
-        printf("\nComando => ");
+        printf("\n[Comando]: ");
     } while(1);
 
     quitGame();
