@@ -13,9 +13,6 @@ int add_cliente(Arbitro *arbitro, PEDIDO *p) {
     if(validate_max_player_exceed(arbitro) == FALSE) return MAX_PLAYER_ERR;
     int newClientIndex;
 
-    // Attributed game to be used only for demo of the #mygame command
-    // To be removed in meta 3
-    
     Cliente newCliente;
     Cliente* tmpClientes;
 
@@ -48,7 +45,6 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
     for(i = 0; i < arbitro->nClientes; i++) {
         if(strcmp(arbitro->clientes[i].jogador.nome, clienteName) == TRUE) {
             if(arbitro->clientes[i].jogo.gamePID > 0) {
-                printf("KILL RES %d %d\n", kill(SIGUSR1, arbitro->clientes[i].jogo.gamePID), arbitro->clientes[i].jogo.gamePID);
                 pthread_kill(arbitro->clientes[i].jogo.readThread, SIGUSR1);
                 pthread_kill(arbitro->clientes[i].jogo.writeThread, SIGUSR1);
             }
@@ -82,10 +78,10 @@ int remove_cliente(Arbitro *arbitro, char *clienteName) {
 */
 void printClientes(Arbitro *arbitro) {
     int i;
-    printf("CLIENTS %d==> ", arbitro->nClientes);
+    printf("\nCLIENTS %d ==> ", arbitro->nClientes);
 
     for(int i = 0; i < arbitro->nClientes; i ++) {
-        printf("%d:%s ", i, arbitro->clientes[i].jogador.nome);
+        printf("%s ", arbitro->clientes[i].jogador.nome);
     }
 
     printf("\n");
@@ -105,7 +101,6 @@ int validate_max_player_exceed(Arbitro *arbitro) {
 int validate_client_connected(Arbitro *arbitro, pid_t pid) {
     int i;
     for(i = 0; i < arbitro->nClientes; i++) {
-        // if(strcmp(arbitro->clientes[i].jogador.nome, nome) == TRUE) {
         if(arbitro->clientes[i].pid == pid) {
            return FALSE;
         }
@@ -138,15 +133,15 @@ void commandClientQuit(Arbitro *arbitro, PEDIDO *p) {
     if(cliente != NULL) {
         strcpy(fifo, cliente->fifo);
         if(remove_cliente(arbitro, p->nome) == FALSE) {
-            printf("[ERRO] Erro ao remover cliente\n");
+            printf("\n[ERRO] Erro ao remover cliente\n");
             sendResponse(*p, "_error_", "", cliente->fifo, sizeof(PEDIDO));
         } else {
-            printf("[INFO] Cliente %s foi removido\n", p->nome);
+            printf("\n[INFO] Cliente %s foi removido\n", p->nome);
             sendResponse(*p, "_quit_", "", fifo, sizeof(PEDIDO));
         }
         printClientes(arbitro);
     } else {
-        printf("[ERRO] Cliente %s nao existe\n", p->nome);
+        printf("\n[ERRO] Cliente %s nao existe\n", p->nome);
     }
 }
 

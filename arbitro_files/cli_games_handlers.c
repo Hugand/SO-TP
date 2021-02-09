@@ -11,7 +11,6 @@ void *gameCommReadThread(void *arg) {
     char *readBuffer;
     PEDIDO p;
     int n = 0;
-    printf("RT JOGO CLIENTE %s pipes %d %d  %d\n", grt->cliente->fifo, grt->pipe[0], grt->pipe[1], *grt->isThreadRunning);
 
     close(grt->pipe[1]);
     do {
@@ -39,7 +38,6 @@ void *gameCommWriteThread(void *arg) {
     close(gwt->pipe[0]);
     do {
         if(strcmp(gwt->cliente->jogo.gameCommand, "") != TRUE) {
-            printf("=>> %s\n", gwt->cliente->jogo.gameCommand);
             strncat(gwt->cliente->jogo.gameCommand, &newLineChar, sizeof(char));
             write(gwt->pipe[1], gwt->cliente->jogo.gameCommand, strlen(gwt->cliente->jogo.gameCommand));
             memset(gwt->cliente->jogo.gameCommand, 0, strlen(gwt->cliente->jogo.gameCommand));
@@ -49,7 +47,6 @@ void *gameCommWriteThread(void *arg) {
 
 void handleClientGameCommunication(Cliente *cliente, int *gameStarted) {
     char writeBuffer[20];
-    // pthread_t readThread, writeThread;
     GAME_COMM_THRD_DATA gameReadThreadData, gameWriteThreadData;
 
     gameReadThreadData.pipe = cliente->jogo.readPipe;
@@ -98,7 +95,6 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
         puts(path);
         execlp(path, path, NULL);
     } else {          //Processo Pai
-        printf("\nProcesso Pai!! - %d\n", pid);
         cliente->jogo.gamePID = pid;
         handleClientGameCommunication(cliente, gameStarted);
         
@@ -107,7 +103,7 @@ void initJogo(Cliente* cliente, int *gameStarted, Arbitro *arbitro){
         if (WIFEXITED(status) && cliente != NULL) {
             exit_status = WEXITSTATUS(status);
             cliente->jogador.pontuacao = exit_status;
-            printf("Exit status of the client %s was %d\n", cliente->jogador.nome, exit_status); 
+            printf("\n[INFO] Pontuacao do cliente %s foi %d\n", cliente->jogador.nome, exit_status); 
         }
     }
 

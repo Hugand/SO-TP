@@ -47,13 +47,13 @@ void getEnvironmentVariables() {
     char *maxplayerBuff;
 
     if((arbitro.GAMEDIR = getenv("GAMEDIR")) == NULL) {
-        printf("GAMEDIR NULLL\n");
+        printf("GAMEDIR NULL\n");
     }else {
         printf("%s\n", arbitro.GAMEDIR);
     }
 
     if((maxplayerBuff = getenv("MAXPLAYER")) == NULL) {
-        printf("MAXPLAYERS NULLL\n");
+        printf("MAXPLAYERS NULL\n");
     } else {
         arbitro.MAXPLAYERS = atoi(maxplayerBuff);
         printf("%d\n", arbitro.MAXPLAYERS);
@@ -153,7 +153,7 @@ void finishGame() {
 */
 void handleConnectRequest(PEDIDO p, char *fifo, int n) {
     if(gameStarted == TRUE) {
-        printf("[WARNING] Coneccao do jogador %s recusada. O campeonato ja comecou.\n", p.nome);
+        printf("\n[WARNING] Coneccao do jogador %s recusada. O campeonato ja comecou.\n", p.nome);
         sendResponse(p, "_connection_failed_", "_game_started_", getClienteByName(&arbitro, p.nome)->fifo, n);
         return;
     }
@@ -221,20 +221,18 @@ void handleClientsMessages(int fd) {
     Cliente *client;
     int n;
     n = read(fd, &p, sizeof(PEDIDO));
-    printf("COMANDO PLAYER: %s\n", p.comando);
     if(p.comando[0] == '#') // Command for arbitro
         handleClientCommandsForArbitro(p, n);
     else { // Command for game...
         client = getClienteByName(&arbitro, p.nome);
 
         if(client->isConnectionSuspended == TRUE) {
-            printf("Comunicação de %s suspensa\n", client->jogador.nome);
+            printf("\n[INFO] Comunicação de %s suspensa\n", client->jogador.nome);
             sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", client->fifo, n);
         } else {
             if(strcmp(client->jogo.nome, "") != TRUE) {
                 strcpy(client->jogo.gameCommand, p.comando);
             }
-            printf("To be processed by the game: %s\n", client->jogo.gameCommand);
         }
     }
 }
@@ -258,7 +256,6 @@ void *runClientMessagesThread(void *arg) {
 
 void* gameThread(void* arg){
     Cliente *cliente = (Cliente *) arg;
-    printf("====> %d\n", gameStarted);
     initJogo(cliente, &gameStarted, &arbitro);
     pthread_exit(NULL);
 }
@@ -267,12 +264,12 @@ void *sorteioJogos(void *arg) {
     signal(SIGALRM, despertar);
     PEDIDO p;
     if(gameStarted == FALSE && arbitro.nClientes >= 2) {
-        printf("[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
+        printf("\n[ SORTEANDO JOGOS ] -- %d\n", arbitro.nClientes);
         gameStarted = TRUE;
         int num;
         
         for(int i = 0; i < arbitro.nClientes; i++) {
-            printf("Starting game for jogador %s\n", arbitro.clientes[i].jogador.nome);
+            printf("\nStarting game for jogador %s\n", arbitro.clientes[i].jogador.nome);
             num = intUniformRnd(1,arbitro.nJogos);
             strcpy(arbitro.clientes[i].jogo.nome , arbitro.jogos[num-1]) ;
             sendResponse(p,"_game_sorted_",arbitro.clientes[i].jogo.nome,arbitro.clientes[i].fifo, sizeof(p));
@@ -296,7 +293,7 @@ void espera(int sinal){
 void* iniciaEspera(void* arg){
     Arbitro *arbtr = (Arbitro *)arg;
     signal(SIGALRM, espera);
-    printf("Aguarde por outros jogadores...");
+    printf("\nAguarde por outros jogadores...");
     while(1){
         if(arbtr->nClientes >= 2){
             alarm(arbtr->TEMPO_ESPERA);
@@ -312,12 +309,10 @@ int main(int argc, char *argv[]){
     PEDIDO p;
     RESPONSE resp;
     int n, res;
-    // char fifo[40];
     fd_set fds;
     THREAD_CLI_MSG thread_cli_msg;
     initRandom();
     initArbitro(argc, argv);
-    printf("ARBITRO\n");
     signal(SIGUSR1, threadSignalHandler);
     signal(SIGINT, sigint_handler);
 
