@@ -22,7 +22,7 @@ int gameStarted = FALSE;
 int serverFd;
 pid_t childPid;
 Arbitro arbitro;            //Arbitro como variavel global
-pthread_t waitThread;
+pthread_t waitThread, clientMessagesThread;
 
 void *sorteioJogos(void *arg);
 void* iniciaEspera(void* arg);
@@ -32,7 +32,10 @@ void despertar(int sinal){
 }
 
 void sigint_handler(int s) {
-    printf("\n");
+    commandArbitroExit(&arbitro);
+
+    pthread_kill(clientMessagesThread, SIGUSR1);
+
     close(serverFd);
     unlink(FIFO_SRV);
     exit(0);
@@ -203,10 +206,8 @@ int handleArbitroCommands() {
         commandArbitroK(&arbitro, adminCommand);
     } else if(adminCommand[0] == 's'){
         commandArbitroConSuspensa(&arbitro, adminCommand, &p, TRUE);
-        // sendResponse(p, "_con_suspensa_", "", fifo, sizeof(p));
     } else if(adminCommand[0] == 'r'){
         commandArbitroConSuspensa(&arbitro, adminCommand, &p, FALSE);
-        // sendResponse(p, "_con_retomada_", "", fifo, sizeof(p));
     } else if(strcmp(adminCommand, "exit") == TRUE){
         commandArbitroExit(&arbitro);
         return 1;
@@ -230,7 +231,9 @@ void handleClientsMessages(int fd) {
             printf("Comunicação de %s suspensa\n", client->jogador.nome);
             sendResponse(p, "_con_suspensa_", "[WARNING] Comunicacao jogador-jogo foi suspensa.", client->fifo, n);
         } else {
-            strcpy(client->jogo.gameCommand, p.comando);
+            if(strcmp(client->jogo.nome, "") != TRUE) {
+                strcpy(client->jogo.gameCommand, p.comando);
+            }
             printf("To be processed by the game: %s\n", client->jogo.gameCommand);
         }
     }
@@ -306,7 +309,6 @@ void* iniciaEspera(void* arg){
 
 
 int main(int argc, char *argv[]){
-    pthread_t clientMessagesThread;
     PEDIDO p;
     RESPONSE resp;
     int n, res;
@@ -317,7 +319,6 @@ int main(int argc, char *argv[]){
     initArbitro(argc, argv);
     printf("ARBITRO\n");
     signal(SIGUSR1, threadSignalHandler);
-
     signal(SIGINT, sigint_handler);
 
     if(access(FIFO_SRV, F_OK)) {
