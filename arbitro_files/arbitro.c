@@ -221,9 +221,10 @@ void handleClientsMessages(int fd) {
     Cliente *client;
     int n;
     n = read(fd, &p, sizeof(PEDIDO));
-    if(p.comando[0] == '#') // Command for arbitro
+    if(p.comando[0] == '#') { // Command for arbitro
         handleClientCommandsForArbitro(p, n);
-    else { // Command for game...
+        printf("\n[ADMIN]: ");
+    } else { // Command for game...
         client = getClienteByName(&arbitro, p.nome);
 
         if(client->isConnectionSuspended == TRUE) {
@@ -244,12 +245,9 @@ void terminaThread(int sig){
 void *runClientMessagesThread(void *arg) {
     signal(SIGUSR1, terminaThread);
     THREAD_CLI_MSG *tcm = (THREAD_CLI_MSG *)arg;
-    // char *fifo = tcm->fifo;
     int fd = tcm->fd;
     while(1) {
-        // handleClientsMessages(fd, fifo);
         handleClientsMessages(fd);
-        printf("\n[ADMIN]: ");
     }
     pthread_exit(NULL);
 }

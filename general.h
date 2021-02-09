@@ -66,7 +66,6 @@ typedef struct{
 
 typedef struct THREAD_CLI_MSG {
     int fd;
-    char fifo[40];
     int stop;
 } THREAD_CLI_MSG;
 
