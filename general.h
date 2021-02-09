@@ -12,11 +12,6 @@
 /*   Structs Dados Gerais    */
 /*****************************/
 
-typedef struct Campeonato{
-    int nJogadores;
-    int tempo;
-} Campeonato;
-
 typedef struct Jogador{
     char nome[TAM];
     int pontuacao;

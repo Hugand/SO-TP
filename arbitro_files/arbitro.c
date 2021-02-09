@@ -36,6 +36,7 @@ void sigint_handler(int s) {
 
     pthread_kill(clientMessagesThread, SIGUSR1);
 
+    free(arbitro.clientes);
     close(serverFd);
     unlink(FIFO_SRV);
     exit(0);
@@ -325,7 +326,6 @@ int main(int argc, char *argv[]){
 
     thread_cli_msg.fd = serverFd;
     thread_cli_msg.stop = 0;
-    // strcpy(thread_cli_msg.fifo, fifo);
 
     pthread_create(&clientMessagesThread, NULL, &runClientMessagesThread, &thread_cli_msg);
     pthread_create(&waitThread, NULL, &iniciaEspera, &arbitro);
@@ -341,6 +341,7 @@ int main(int argc, char *argv[]){
 
     pthread_kill(clientMessagesThread, SIGUSR1);
 
+    free(arbitro.clientes);
     close(serverFd);
     unlink(FIFO_SRV);
     exit(0);

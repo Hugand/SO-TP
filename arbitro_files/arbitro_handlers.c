@@ -42,6 +42,7 @@ void commandArbitroK(Arbitro *arbitro, char* adminCommand) {
 
 void commandArbitroExit(Arbitro *arbitro) {
     PEDIDO ptmp;
+    displayFinalScores(arbitro);
     for(int i = 0; i < arbitro->nClientes; i){
         strcpy(ptmp.nome,arbitro->clientes[i].jogador.nome);
         ptmp.pid = arbitro->clientes[i].pid;
@@ -98,9 +99,11 @@ printf("\n\n###############################\n");
     for(int i = 0; i < arbitro->nClientes; i++) {
         strcpy(p.nome, arbitro->clientes[i].jogador.nome);
         if(arbitro->winner == &arbitro->clientes[i]) {
-            sprintf(winnerDesc, "\nPontuacao final: %d\n\nParabens! Venceu o campeonato com %dpts!", arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.pontuacao);
+            sprintf(winnerDesc, "\nPontuacao final: %d\n\nParabens! Venceu o campeonato com %dpts!",
+                arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.pontuacao);
         } else {
-            sprintf(winnerDesc, "\nPontuacao final: %d\n\nO vencedor do campeonato foi %s com %dpts!", arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.nome, arbitro->winner->jogador.pontuacao);
+            sprintf(winnerDesc, "\nPontuacao final: %d\n\nO vencedor do campeonato foi %s com %dpts!",
+                arbitro->clientes[i].jogador.pontuacao, arbitro->winner->jogador.nome, arbitro->winner->jogador.pontuacao);
         }
         sendResponse(p, "_announce_winner_", winnerDesc, arbitro->clientes[i].fifo, sizeof(p));
     }
